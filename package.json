@@ -14,6 +14,7 @@
     "bcryptjs": "^3.0.2",
     "cookie": "^1.0.2",
     "cookies-next": "^6.1.0",
+    "jose": "^6.0.13",
     "jsonwebtoken": "^9.0.2",
     "next": "15.5.0",
     "prisma": "^6.14.0",

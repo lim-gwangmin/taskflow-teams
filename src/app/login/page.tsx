@@ -17,12 +17,13 @@ export default function LoginPage() {
         const formData = new FormData(e.currentTarget);
         const email = formData.get('email') as string;
         const password = formData.get('password') as string;
+        const rememberMe = formData.has('rememberMe') as boolean;
 
         try {
             const response = await fetch('/api/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
+                body: JSON.stringify({ email, password, rememberMe }),
             });
 
             if (response.ok) {
@@ -30,8 +31,6 @@ export default function LoginPage() {
             } else {
                 const data = await response.json();
                 toast.error(data.error);
-
-            //   setError(data.error || '로그인에 실패했습니다.');
             }
         } catch(error) {
             console.error(error);
@@ -85,6 +84,39 @@ export default function LoginPage() {
                 required
               />
             </div>
+
+            {/* 자동 로그인 체크란 */}
+            <div className="flex items-center">
+                <div className="relative flex items-center justify-center w-5 h-5">
+                    <input
+                    id="rememberMe"
+                    name="rememberMe"
+                    type="checkbox"
+                    className="
+                        peer appearance-none w-full h-full border border-gray-300 rounded-md
+                        checked:bg-blue-600 checked:border-transparent
+                        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+                        cursor-pointer
+                    "
+                    />
+                    {/* SVG 체크 아이콘 */}
+                    <div className="absolute pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity">
+                        <svg className="w-4 h-4 text-white" 
+                            xmlns="http://www.w3.org/2000/svg" 
+                            viewBox="0 0 24 24" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            strokeWidth="4" 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                </div>
+                <label htmlFor="rememberMe" className="ml-2 text-sm font-medium text-gray-700 cursor-pointer">
+                    자동 로그인
+                </label>
+                </div>
 
             {/* 로그인 버튼 */}
             <button

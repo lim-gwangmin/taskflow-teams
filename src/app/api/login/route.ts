@@ -4,9 +4,18 @@ import { prisma } from '@/lib/prisma'; // Prisma 클라이언트 인스턴스
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
+interface CookieOptions {
+  httpOnly: boolean;
+  secure: boolean;
+  sameSite: 'strict' | 'lax' | 'none';
+  path: string;
+  maxAge?:number;
+}
+
+
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json();
+    const { email, password, rememberMe } = await request.json();
 
     // 1. 이메일로 사용자 찾기
     const user = await prisma.user.findUnique({ where: { email } });
@@ -16,6 +25,7 @@ export async function POST(request: NextRequest) {
 
     // 2. 비밀번호 비교 (bcrypt 사용)
     const isPasswordValid = await bcrypt.compare(password, user.password);
+
     if (!isPasswordValid) {
       return NextResponse.json({ error: '비밀번호가 일치하지 않습니다.' }, { status: 401 });
     }
@@ -27,13 +37,22 @@ export async function POST(request: NextRequest) {
 
     // 4. 성공 응답과 함께 쿠키에 토큰 저장
     const response = NextResponse.json({ message: '로그인 성공' }, { status: 200 });
-    response.cookies.set('token', token, {
-      httpOnly: true, // 클라이언트 측 JS에서 쿠키 접근 방지
-      secure: process.env.NODE_ENV === 'production', // 프로덕션 환경에서만 HTTPS 필요
-      sameSite: 'strict',
-      maxAge: 60 * 60 * 24 * 7, // 7일
-      path: '/',
-    });
+
+    const cookieOptions : CookieOptions = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict' as 'strict',
+        path: '/',
+    };
+
+    if (rememberMe) {
+        // '자동 로그인' 체크 시: 7일간 유효한 쿠키
+        cookieOptions.maxAge = 60 * 60 * 24 * 7;
+      }
+      // 체크하지 않은 경우: maxAge를 설정하지 않아 '세션 쿠키'가 됨
+      
+      response.cookies.set('token', token, cookieOptions);
+
 
     return response;
 

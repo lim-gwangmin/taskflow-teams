@@ -35,7 +35,7 @@ export default function SignupPage() {
 
     try {
       // 1. fetch를 사용해 REST API 호출
-      const response = await fetch('/api/signup', {
+      const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, name }),

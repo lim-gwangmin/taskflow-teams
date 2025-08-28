@@ -7,10 +7,23 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// 유저 정보 스키마
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
   password  String
   name      String?
-  createdAt DateTime @default(now())
+  createdAt DateTime 
+  
+  @@map("users")
+}
+
+// 이메일 인증 스키마
+model VerificationToken {
+  id                    String   @id @default(uuid())
+  email                 String   @unique
+  verificationCode      String   @unique
+  expiresAt             DateTime
+
+  @@map("verification_tokens")
 }

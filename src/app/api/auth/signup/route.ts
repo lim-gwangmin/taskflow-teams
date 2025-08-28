@@ -14,6 +14,7 @@ export async function POST(request: NextRequest) {
 
     // 2. 이메일 중복 확인
     const existingUser = await prisma.user.findUnique({ where: { email } });
+
     if (existingUser) {
       return NextResponse.json({ error: '이미 사용 중인 이메일입니다.' }, { status: 409 });
     }

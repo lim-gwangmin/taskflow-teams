@@ -3,19 +3,110 @@
 import { useState, useRef, FormEvent } from 'react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import useLoader from '@/hooks/useLoader';
 
 export default function SignupPage() {
   const formRef = useRef(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-//   const [name, setName] = useState('');
-//   const [email, setEmail] = useState('');
-//   const [password, setPassword] = useState('');
-//   const [confirmPassword, setConfirmPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const modalFormRef = useRef(null);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useLoader<boolean>(false);
+  const [ hasVerification, setHasVerification ] = useState<boolean>(false);
   const router = useRouter();
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  // 이메일 인증코드 전송
+  const sendVerification = async () : Promise<void> =>  {
+    const email = formRef.current?.elements['email']?.value;
+    
+    setIsLoading(true);
+
+    try {
+      // 1. fetch를 사용해 REST API 호출
+      const response = await fetch('/api/auth/send-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success('인증코드가 메일로 전송되었습니다.');
+        setIsModalOpen(true);
+      } else {
+        toast.error(data.error || '인증코드 발송에 실패했습니다.');
+      }
+    } catch (error) {
+      toast.error('오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      console.error('Signup failed:', error);
+    } finally {
+        setIsLoading(false);
+    };
+
+  };
+
+  // 이메일 코드 인증 
+  const verifyCode = async (e: FormEvent<HTMLFormElement>) : Promise<void> => {
+    e.preventDefault();
+
+    const email = (formRef.current?.elements['email'] as HTMLInputElement)?.value;
+    const code = (modalFormRef.current?.elements['verifyCode'] as HTMLInputElement)?.value;
+    
+    setIsLoading(true);
+
+    try {
+      // 1. fetch를 사용해 REST API 호출
+      const response = await fetch('/api/auth/verify-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success('인증되었습니다.');
+        setHasVerification(true);
+        setIsModalOpen(false);
+      } else {
+        toast.error(data.error || '인증에 실패했습니다.');
+      }
+    } catch (error) {
+      toast.error('오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      console.error('Signup failed:', error);
+    } finally {
+        setIsLoading(false);
+    };
+  }
+
+  // 비밀번호 정책 유효성 검사 함수
+    function validatePassword(password : string) : boolean {
+        // 1. 비밀번호 길이 확인 (6자리 이상)
+        if (password.length < 6) {
+            toast.error("비밀번호는 6자리 이상이어야 합니다.");
+            return false;
+        }
+
+        // 2. 숫자 포함 여부 확인
+        // \d 는 숫자를 의미하는 정규식입니다.
+        const hasNumber = /\d/.test(password);
+        if (!hasNumber) {
+            toast.error("비밀번호에 숫자가 포함되어야 합니다.");
+            return false;
+        }
+
+        // 3. 특수문자 포함 여부 확인
+        // 아래 정규식은 일반적인 특수문자들을 포함합니다.
+        const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+        if (!hasSpecialChar) {
+            toast.error("비밀번호에 특수문자가 포함되어야 합니다.");
+            return false;
+        }
+
+        return true;
+    }
+
+  // 회원가입 
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) : Promise<void> => {
     e.preventDefault();
 
     // FormData를 사용해 form에서 직접 값을 가져옵니다.
@@ -25,7 +116,10 @@ export default function SignupPage() {
     const password = formData.get('password') as string;
     const confirmPassword = formData.get('confirm-password') as string;
 
-    // 비밀번호 확인
+    // 비밀번호 정책 유효성 검사
+    if(!validatePassword(password)) return;
+
+    // 비밀번호, 비밀번호 확인 일치한지 확인
     if (password !== confirmPassword) {
       toast.error('비밀번호가 일치하지 않습니다.');
       return;
@@ -57,6 +151,7 @@ export default function SignupPage() {
     }
   };
 
+
   return (
     <>
       {/* 1. 회원가입 페이지 메인 UI */}
@@ -67,7 +162,6 @@ export default function SignupPage() {
               <h1 className="text-3xl font-bold text-gray-900">회원가입</h1>
               <p className="text-gray-500 mt-2">새로운 계정을 생성하세요.</p>
             </div>
-
             <form className="space-y-6" ref={formRef} onSubmit={handleSubmit}>
             {/* 이름 입력란 */}
               <div className="space-y-2">
@@ -94,13 +188,15 @@ export default function SignupPage() {
                     name="email"
                     type="email"
                     placeholder="email@example.com"
-                    className="flex-grow px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="flex-grow px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 read-only:bg-gray-100 read-only:cursor-not-allowed"
                     required
+                    readOnly={hasVerification}
                   />
                   <button
                     type="button"
-                    onClick={() => setIsModalOpen(true)}
-                    className="bg-gray-700 text-white font-bold py-2 px-4 rounded-md hover:bg-gray-800 transition-colors whitespace-nowrap"
+                    onClick={sendVerification}
+                    disabled={hasVerification}
+                    className="bg-gray-700 text-white font-bold py-2 px-4 rounded-md hover:bg-gray-800 transition-colors whitespace-nowrap disabled:opacity-75 disabled:cursor-not-allowed"
                   >
                     인증
                   </button>
@@ -120,6 +216,7 @@ export default function SignupPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
+                <p className="text-xs font-medium text-red-700">숫자와 특수문자를 반드시 포함 6자리 이상</p>
               </div>
 
               {/* 비밀번호 확인란 */}
@@ -157,9 +254,10 @@ export default function SignupPage() {
             <p className="text-sm text-gray-600 mb-4">
               이메일로 전송된 6자리 인증번호를 입력해주세요.
             </p>
-            <form>
+            <form ref={modalFormRef} onSubmit={verifyCode}>
               <input
                 type="text"
+                name="verifyCode"
                 maxLength={6}
                 placeholder="123456"
                 className="w-full px-4 py-3 text-center tracking-[0.5em] border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -173,7 +271,7 @@ export default function SignupPage() {
                   취소
                 </button>
                 <button
-                  type="button"
+                  type="submit"
                   className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
                 >
                   인증하기

@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
 
     // 1. 이메일로 사용자 찾기
     const user = await prisma.user.findUnique({ where: { email } });
+
     if (!user) {
       return NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 404 });
     }

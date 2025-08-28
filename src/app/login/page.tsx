@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, FormEvent } from 'react';
-import { setCookie } from 'cookies-next';
+import useLoader from '@/hooks/useLoader';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
 export default function LoginPage() {
     const router = useRouter();
-    const [ isLoading, setIsLoading ] = useState<boolean>(false);
+    const [ isLoading, setIsLoading ] = useLoader(false);
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();

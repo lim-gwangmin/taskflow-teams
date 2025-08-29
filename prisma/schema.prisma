@@ -7,17 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// 유저 정보 스키마
-model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  name      String?
-  createdAt DateTime 
-  
-  @@map("users")
-}
-
 // 이메일 인증 스키마
 model VerificationToken {
   id                    String   @id @default(uuid())
@@ -26,4 +15,64 @@ model VerificationToken {
   expiresAt             DateTime
 
   @@map("verification_tokens")
+}
+
+// 유저 정보 스키마
+model User {
+  id          Int      @id @default(autoincrement())
+  email       String   @unique
+  password    String
+  name        String?
+  createdAt   DateTime @default(now())
+
+  // --- 관계 필드 ---
+  memberships Membership[] // 이 유저가 속한 그룹 멤버십 목록
+  posts       Post[]       // 이 유저가 작성한 게시글 목록 (수정)
+  
+  @@map("users")
+}
+
+// 그룹 정보 스키마
+model Group {
+  id          String       @id @default(uuid())
+  name        String
+  
+  // --- 관계 필드 ---
+  memberships Membership[] // 이 그룹에 속한 멤버십 목록
+  posts       Post[]       // 이 그룹에 작성된 게시글 목록
+}
+
+// 권한 Enum
+enum Role {
+  ADMIN
+  MEMBER
+  GUEST
+}
+
+// user, group 사이 관계와 역할 중간 테이블 스키마
+model Membership {
+  userId  Int    // User.id(Int)와 타입 일치 (수정)
+  groupId String // Group.id(String)와 타입 일치
+
+  // --- 관계 필드 ---
+  user    User   @relation(fields: [userId], references: [id])
+  group   Group  @relation(fields: [groupId], references: [id])
+  role    Role
+
+  // 복합 기본 키 (Composite Primary Key)
+  @@id([userId, groupId])
+}
+
+// 그룹 내 작성한 글 정보 스키마
+model Post {
+  id        String @id @default(uuid())
+  title     String
+  content   String
+  
+  authorId  Int    // User.id(Int)와 타입 일치 (수정)
+  groupId   String // Group.id(String)와 타입 일치
+  
+  // --- 관계 필드 ---
+  author    User   @relation(fields: [authorId], references: [id])
+  group     Group  @relation(fields: [groupId], references: [id])
 }

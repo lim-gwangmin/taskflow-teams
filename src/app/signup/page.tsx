@@ -9,7 +9,7 @@ export default function SignupPage() {
   const formRef = useRef(null);
   const modalFormRef = useRef(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useLoader<boolean>(false);
+  const [isLoading, setIsLoading] = useLoader(false);
   const [ hasVerification, setHasVerification ] = useState<boolean>(false);
   const router = useRouter();
 

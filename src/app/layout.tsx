@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import NextTopLoader from 'nextjs-toploader';
+import {Providers} from "./providers";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -25,10 +26,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="ko">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <NextTopLoader />
-        {children}
+        <Providers> {children} </Providers>
         <Toaster position="top-right"/>
       </body>
     </html>

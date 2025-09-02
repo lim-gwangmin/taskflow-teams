@@ -1,11 +1,13 @@
 "use client";
 
 import useCustomRouter from "@/hooks/useCustomRouter";
+import { Button } from "@heroui/button";
+import { toast } from "sonner";
 
 export default function LogoutButton() {
     const { handleRoute } = useCustomRouter();
 
-    const handleLogout = async () => {
+    const handleLogout = async () : Promise<void> => {
         // 로그아웃 API 호출
         const response = await fetch('/api/auth/logout');
 
@@ -13,13 +15,13 @@ export default function LogoutButton() {
         // 로그아웃 성공 시 로그인 페이지로 이동
             handleRoute('/login');
         } else {
-            alert('로그아웃에 실패했습니다.');
+            toast.error('로그아웃에 실패했습니다.');
         }
     };
 
     return (
-        <button type="button">
+        <Button type="button" variant="light" onClick={handleLogout}>
             로그아웃 
-        </button>
+        </Button>
     )
 }

@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation';
 import useLoader from '@/hooks/useLoader';
 
 export default function SignupPage() {
-  const formRef = useRef(null);
-  const modalFormRef = useRef(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const modalFormRef = useRef<HTMLFormElement>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useLoader(false);
   const [ hasVerification, setHasVerification ] = useState<boolean>(false);
@@ -15,7 +15,8 @@ export default function SignupPage() {
 
   // 이메일 인증코드 전송
   const sendVerification = async () : Promise<void> =>  {
-    const email = formRef.current?.elements['email']?.value;
+    const emailInput = formRef.current?.elements.namedItem('email') as HTMLInputElement;
+    const email = emailInput?.value;
     
     setIsLoading(true);
 
@@ -47,9 +48,10 @@ export default function SignupPage() {
   // 이메일 코드 인증 
   const verifyCode = async (e: FormEvent<HTMLFormElement>) : Promise<void> => {
     e.preventDefault();
-
-    const email = (formRef.current?.elements['email'] as HTMLInputElement)?.value;
-    const code = (modalFormRef.current?.elements['verifyCode'] as HTMLInputElement)?.value;
+    const emailInput = formRef.current?.elements.namedItem('email') as HTMLInputElement;
+    const email = emailInput?.value;
+    const codeInput = formRef.current?.elements.namedItem('verifyCode') as HTMLInputElement;
+    const code = codeInput?.value;
     
     setIsLoading(true);
 

@@ -31,15 +31,17 @@ export async function POST(request: NextRequest) {
        const existingToken = await prisma.verificationToken.findUnique({
           where: { email },
         });
-        const hasExpired = new Date() > existingToken.expiresAt;
 
-        // 인증 코드가 유효할 시,
-        if(!hasExpired) return NextResponse.json({ error: "이미 인증코드가 전송되었습니다." }, { status: 409 });
+        if(existingToken) {
+          const hasExpired = new Date() > existingToken.expiresAt;
+          // 인증 코드가 유효할 시,
+          if(!hasExpired) return NextResponse.json({ error: "이미 인증코드가 전송되었습니다." }, { status: 409 });
 
-        // 인증 코드가 만료되었을 시 데이터 삭제
-        await prisma.verificationToken.deleteMany({
-            where: { email }
-        });        
+          // 인증 코드가 만료되었을 시 데이터 삭제
+          await prisma.verificationToken.deleteMany({
+              where: { email }
+          });        
+        }
 
         NextResponse.json({ error: "인증코드가 만료되었습니다. 다시 시도해주세요." }, { status: 409 });
     };

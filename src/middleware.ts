@@ -15,19 +15,9 @@ function isPublicPage(path: string): path is PublicPage {
   return (publicPages as readonly string[]).includes(path);
 }
 
-
 // 미들웨어가 실행될 경로를 지정합니다.
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };
 
 // JWT 서명에 사용된 비밀 키를 가져옵니다.

@@ -11,7 +11,7 @@ const publicPages = [ROUTES.LOGIN, ROUTES.SIGNUP] as const;
 type PublicPage = typeof publicPages[number];
 
 // 3. 타입 가드 함수 (동일)
-function isPublicPage(path: string): path is PublicPage {
+function isPublicPage(path: string): path is PublicPage { 
   return (publicPages as readonly string[]).includes(path);
 }
 

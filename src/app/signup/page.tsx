@@ -30,10 +30,17 @@ export default function SignupPage() {
 
       const data = await response.json();
 
+      console.log(data,'!!');
       if (response.ok) {
         toast.success('인증코드가 메일로 전송되었습니다.');
         setIsModalOpen(true);
       } else {
+
+        if(data.error === "이미 인증코드가 전송되었습니다. 메일을 확인해주세요.") {
+          setIsModalOpen(true);
+          return;
+        };
+
         toast.error(data.error || '인증코드 발송에 실패했습니다.');
       }
     } catch (error) {
@@ -50,9 +57,9 @@ export default function SignupPage() {
     e.preventDefault();
     const emailInput = formRef.current?.elements.namedItem('email') as HTMLInputElement;
     const email = emailInput?.value;
-    const codeInput = formRef.current?.elements.namedItem('verifyCode') as HTMLInputElement;
+    const codeInput = modalFormRef.current?.elements.namedItem('verifyCode') as HTMLInputElement;
     const code = codeInput?.value;
-    
+
     setIsLoading(true);
 
     try {
@@ -81,31 +88,31 @@ export default function SignupPage() {
   }
 
   // 비밀번호 정책 유효성 검사 함수
-    function validatePassword(password : string) : boolean {
-        // 1. 비밀번호 길이 확인 (6자리 이상)
-        if (password.length < 6) {
-            toast.error("비밀번호는 6자리 이상이어야 합니다.");
-            return false;
-        }
+  function validatePassword(password : string) : boolean {
+      // 1. 비밀번호 길이 확인 (6자리 이상)
+      if (password.length < 6) {
+          toast.error("비밀번호는 6자리 이상이어야 합니다.");
+          return false;
+      }
 
-        // 2. 숫자 포함 여부 확인
-        // \d 는 숫자를 의미하는 정규식입니다.
-        const hasNumber = /\d/.test(password);
-        if (!hasNumber) {
-            toast.error("비밀번호에 숫자가 포함되어야 합니다.");
-            return false;
-        }
+      // 2. 숫자 포함 여부 확인
+      // \d 는 숫자를 의미하는 정규식입니다.
+      const hasNumber = /\d/.test(password);
+      if (!hasNumber) {
+          toast.error("비밀번호에 숫자가 포함되어야 합니다.");
+          return false;
+      }
 
-        // 3. 특수문자 포함 여부 확인
-        // 아래 정규식은 일반적인 특수문자들을 포함합니다.
-        const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-        if (!hasSpecialChar) {
-            toast.error("비밀번호에 특수문자가 포함되어야 합니다.");
-            return false;
-        }
+      // 3. 특수문자 포함 여부 확인
+      // 아래 정규식은 일반적인 특수문자들을 포함합니다.
+      const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+      if (!hasSpecialChar) {
+          toast.error("비밀번호에 특수문자가 포함되어야 합니다.");
+          return false;
+      }
 
-        return true;
-    }
+      return true;
+  }
 
   // 회원가입 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) : Promise<void> => {

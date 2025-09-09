@@ -30,19 +30,19 @@ export default function SignupPage() {
 
       const data = await response.json();
 
-      console.log(data,'!!');
       if (response.ok) {
         toast.success('인증코드가 메일로 전송되었습니다.');
         setIsModalOpen(true);
-      } else {
+        return;
+      } 
 
-        if(data.error === "이미 인증코드가 전송되었습니다. 메일을 확인해주세요.") {
-          setIsModalOpen(true);
-          return;
-        };
+      if(data.error === "이미 인증코드가 전송되었습니다. 메일을 확인해주세요.") {
+        setIsModalOpen(true);
+        return;
+      };
 
-        toast.error(data.error || '인증코드 발송에 실패했습니다.');
-      }
+      toast.error(data.error || '인증코드 발송에 실패했습니다.');
+      
     } catch (error) {
       toast.error('오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
       console.error('Signup failed:', error);

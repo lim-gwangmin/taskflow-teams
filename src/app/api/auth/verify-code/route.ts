@@ -5,8 +5,6 @@ export async function POST(request: NextRequest) {
   try {
     const { email, code } = await request.json();
 
-    console.log(email, code,'email, code')
-
     const verification = await prisma.verificationToken.findUnique({ where: { email } });
 
     // 1. 사용자가 없거나 코드가 일치하지 않는 경우

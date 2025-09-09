@@ -2,6 +2,7 @@ import { toast } from "sonner";
 import { redirect } from "next/navigation";
 
 export const get_logout = async () : Promise<void> => {
+
     // 로그아웃 API 호출
     const response = await fetch('/api/auth/logout');
 

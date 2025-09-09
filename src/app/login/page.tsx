@@ -13,7 +13,7 @@ export default function LoginPage() {
         e.preventDefault();
 
         setIsLoading(true);
-
+        
         const formData = new FormData(e.currentTarget);
         const email = formData.get('email') as string;
         const password = formData.get('password') as string;
@@ -27,14 +27,14 @@ export default function LoginPage() {
             });
 
             if (response.ok) {
-                router.push('/dashboard'); // 로그인 성공 시 대시보드 페이지로 이동
+              router.push('/dashboard'); // 로그인 성공 시 대시보드 페이지로 이동
+              return;
             } else {
-                const data = await response.json();
-                toast.error(data.error);
+              const data = await response.json();
+              toast.error(data.error);
             }
         } catch(error) {
             console.error(error);
-
         } finally {
             setIsLoading(false);
         }

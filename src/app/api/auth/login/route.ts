@@ -51,7 +51,6 @@ export async function POST(request: NextRequest) {
         cookieOptions.maxAge = 60 * 60 * 24 * 7;
       }
       // 체크하지 않은 경우: maxAge를 설정하지 않아 '세션 쿠키'가 됨
-      
       response.cookies.set('token', token, cookieOptions);
 
 

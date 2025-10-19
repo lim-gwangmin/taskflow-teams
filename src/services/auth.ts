@@ -1,15 +1,35 @@
-import { toast } from "sonner";
-import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import { verify } from "jsonwebtoken";
+import { prisma } from "@/lib/prisma";
+import { User } from "@prisma/client";
+// 쿠키 유저 정보 타입
+export type CurrentUser = User | null;
 
-export const get_logout = async () : Promise<void> => {
+// 유저 정보 조회
+export const getCurrentUser = async (): Promise<CurrentUser> => {
+  const cookieStore = await cookies();
+  const tokenCookie = cookieStore.get("token");
 
-    // 로그아웃 API 호출
-    const response = await fetch('/api/auth/logout');
+  if (!tokenCookie) {
+    return null;
+  }
 
-    if (response.ok) {
-    // 로그아웃 성공 시 로그인 페이지로 이동
-        redirect('/login');
-    } else {
-        toast.error('로그아웃에 실패했습니다.');
+  const secret = process.env.JWT_SECRET!;
+  const decoded = verify(tokenCookie.value, secret);
+
+  try {
+    if (typeof decoded === "object" && "userId" in decoded) {
+      const userId = decoded.userId as number;
+      const currentUser = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      return currentUser;
     }
-}
+
+    return null;
+  } catch (error) {
+    console.error("Invalid token:", error);
+    return null;
+  }
+};

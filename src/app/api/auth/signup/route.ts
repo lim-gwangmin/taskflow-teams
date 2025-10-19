@@ -1,22 +1,39 @@
 // src/app/api/signup/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import bcrypt from 'bcryptjs';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
+import { COMMON_COMMENTS, AUTH_COMMENTS } from "@/constants/comments";
 
 export async function POST(request: NextRequest) {
+  const { SUCCESS_200, ERROR_400, ERROR_409, ERROR_500 } = AUTH_COMMENTS.SIGNUP;
+  const { SERVER_ERROR } = COMMON_COMMENTS.SERVER;
   try {
     const { email, password, name } = await request.json();
 
     // 1. 입력 값 검증
     if (!email || !password) {
-      return NextResponse.json({ error: '이메일과 비밀번호는 필수입니다.' }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          data: null,
+          error: { message: ERROR_400 },
+        },
+        { status: 400 }
+      );
     }
 
     // 2. 이메일 중복 확인
     const existingUser = await prisma.user.findUnique({ where: { email } });
 
     if (existingUser) {
-      return NextResponse.json({ error: '이미 사용 중인 이메일입니다.' }, { status: 409 });
+      return NextResponse.json(
+        {
+          success: false,
+          data: null,
+          error: { message: ERROR_409 },
+        },
+        { status: 409 }
+      );
     }
 
     // 3. 비밀번호 해싱 (암호화)
@@ -30,14 +47,27 @@ export async function POST(request: NextRequest) {
         password: hashedPassword,
       },
     });
-    
+
     // 보안을 위해 password 필드를 응답에서 제외
     const { password: _, ...userWithoutPassword } = user;
 
-    return NextResponse.json({ user: userWithoutPassword }, { status: 201 });
-
+    return NextResponse.json(
+      {
+        success: true,
+        data: { message: SUCCESS_200, user: userWithoutPassword },
+        error: null,
+      },
+      { status: 200 }
+    );
   } catch (error) {
-    console.error('회원가입 API 오류:', error);
-    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
+    console.error(SERVER_ERROR, ERROR_500, error);
+    return NextResponse.json(
+      {
+        success: false,
+        data: null,
+        error: { message: ERROR_500 },
+      },
+      { status: 500 }
+    );
   }
 }

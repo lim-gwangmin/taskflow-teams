@@ -36,9 +36,12 @@ model User {
 
 // 그룹 정보 스키마
 model Group {
-  id          String       @id @default(uuid())
+  id          String        @id @default(uuid())
+  seq         Int           @unique @default(autoincrement()) // 고유한 숫자 ID
   name        String
-  
+  createdAt   DateTime      @default(now())
+  no          Int           @unique @default(autoincrement()) // 그룹 생성 순서 (최신/오래된순 정렬용)
+
   // --- 관계 필드 ---
   memberships Membership[] // 이 그룹에 속한 멤버십 목록
   posts       Post[]       // 이 그룹에 작성된 게시글 목록
@@ -49,12 +52,15 @@ enum Role {
   ADMIN
   MEMBER
   GUEST
+  VIEWER
 }
 
 // user, group 사이 관계와 역할 중간 테이블 스키마
 model Membership {
-  userId  Int    // User.id(Int)와 타입 일치 (수정)
-  groupId String // Group.id(String)와 타입 일치
+  userId    Int               // User.id(Int)와 타입 일치
+  userEmail String            // User.email(String unique)와 타입 일치 
+  groupId   String            // Group.id(String)와 타입 일치
+  groupSeq  Int               //  Group.seq(Int)와 타입 일치 (숫자 ID 참조)
 
   // --- 관계 필드 ---
   user    User   @relation(fields: [userId], references: [id])
@@ -63,6 +69,8 @@ model Membership {
 
   // 복합 기본 키 (Composite Primary Key)
   @@id([userId, groupId])
+  // 🔽 복합 인덱스 추가 (groupId 대신 groupSeq로 그룹을 특정할 때 사용)
+  @@index([groupSeq])
 }
 
 // 그룹 내 작성한 글 정보 스키마

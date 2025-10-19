@@ -1,54 +1,53 @@
 "use client";
 
-import { useState, FormEvent } from 'react';
-import useLoader from '@/hooks/useLoader';
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
+import { FormEvent } from "react";
+import useLoader from "@/hooks/useLoader";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { POST } from "@/lib/axiosInstans";
+import { AUTH_API_URLS } from "@/constants/api/auth";
+import { SuccessResponse } from "@/types/response_type";
+import { ROUTES } from "@/constants/routes";
+const { LOG_IN } = AUTH_API_URLS;
 
 export default function LoginPage() {
-    const router = useRouter();
-    const [ isLoading, setIsLoading ] = useLoader(false);
+  const router = useRouter();
+  const { setIsLoading } = useLoader(false);
 
-    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
 
-        setIsLoading(true);
-        
-        const formData = new FormData(e.currentTarget);
-        const email = formData.get('email') as string;
-        const password = formData.get('password') as string;
-        const rememberMe = formData.has('rememberMe') as boolean;
+    setIsLoading(true);
 
-        try {
-            const response = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password, rememberMe }),
-            });
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+    const rememberMe = formData.has("rememberMe") as boolean;
 
-            if (response.ok) {
-              router.push('/dashboard'); // 로그인 성공 시 대시보드 페이지로 이동
-              return;
-            } else {
-              const data = await response.json();
-              toast.error(data.error);
-            }
-        } catch(error) {
-            console.error(error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    try {
+      const response = await POST<SuccessResponse>(LOG_IN, { email, password, rememberMe });
+      const { success, data, error } = response;
+
+      if (!success) {
+        toast.error(error.message);
+        throw new Error(error.message);
+      }
+
+      router.push(ROUTES.DASHBOARD);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     // 1. 전체 화면을 차지하고, 배경색을 연한 회색으로 설정
     <main className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
       {/* 2. 로그인 폼 컨테이너 */}
       <div className="w-full max-w-md">
-        
         {/* 3. 흰색 배경의 네모 박스 (Card) */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-lg p-8">
-          
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900">TaskFlow Teams</h1>
             <p className="text-gray-500 mt-2">서비스를 이용하려면 로그인하세요.</p>
@@ -87,36 +86,38 @@ export default function LoginPage() {
 
             {/* 자동 로그인 체크란 */}
             <div className="flex items-center">
-                <div className="relative flex items-center justify-center w-5 h-5">
-                    <input
-                    id="rememberMe"
-                    name="rememberMe"
-                    type="checkbox"
-                    className="
+              <div className="relative flex items-center justify-center w-5 h-5">
+                <input
+                  id="rememberMe"
+                  name="rememberMe"
+                  type="checkbox"
+                  className="
                         peer appearance-none w-full h-full border border-gray-300 rounded-md
                         checked:bg-blue-600 checked:border-transparent
                         focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
                         cursor-pointer
                     "
-                    />
-                    {/* SVG 체크 아이콘 */}
-                    <div className="absolute pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity">
-                        <svg className="w-4 h-4 text-white" 
-                            xmlns="http://www.w3.org/2000/svg" 
-                            viewBox="0 0 24 24" 
-                            fill="none" 
-                            stroke="currentColor" 
-                            strokeWidth="4" 
-                            strokeLinecap="round" 
-                            strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                    </div>
+                />
+                {/* SVG 체크 아이콘 */}
+                <div className="absolute pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity">
+                  <svg
+                    className="w-4 h-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
                 </div>
-                <label htmlFor="rememberMe" className="ml-2 text-sm font-medium text-gray-700 cursor-pointer">
-                    자동 로그인
-                </label>
-                </div>
+              </div>
+              <label htmlFor="rememberMe" className="ml-2 text-sm font-medium text-gray-700 cursor-pointer">
+                자동 로그인
+              </label>
+            </div>
 
             {/* 로그인 버튼 */}
             <button

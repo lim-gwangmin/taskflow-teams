@@ -1,165 +1,163 @@
 "use client";
 
-import { useState, useRef, FormEvent } from 'react';
-import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
-import useLoader from '@/hooks/useLoader';
+import { useState, useRef, FormEvent } from "react";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import useLoader from "@/hooks/useLoader";
+import { POST } from "@/lib/axiosInstans";
+import { AUTH_API_URLS } from "@/constants/api/auth";
+import { ROUTES } from "@/constants/routes";
+import { AUTH_COMMENTS } from "@/constants/comments";
+import { SuccessResponse } from "@/types/response_type";
+// 문자열 상수
+const { SIGN_UP, VERIFY_CODE, SEND_VERIFICATION } = AUTH_API_URLS;
+const {
+  VALIDATE_LENGTH,
+  VALIDATE_HAS_NUMBER,
+  VALIDATE_HAS_SPECIALCHAR,
+  VALIDATE_CONFIRM_PASSWORD,
+  VALIDATE_VERIFICATION,
+} = AUTH_COMMENTS.SIGNUP;
+const { VALIDATE_EMAIL_CODE } = AUTH_COMMENTS.VERIFY_CODE;
 
 export default function SignupPage() {
   const formRef = useRef<HTMLFormElement>(null);
   const modalFormRef = useRef<HTMLFormElement>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useLoader(false);
-  const [ hasVerification, setHasVerification ] = useState<boolean>(false);
+  const { setIsLoading } = useLoader(false);
+  const [hasVerification, setHasVerification] = useState<boolean>(false);
   const router = useRouter();
 
   // 이메일 인증코드 전송
-  const sendVerification = async () : Promise<void> =>  {
-    const emailInput = formRef.current?.elements.namedItem('email') as HTMLInputElement;
+  const sendVerification = async (): Promise<void> => {
+    const emailInput = formRef.current?.elements.namedItem("email") as HTMLInputElement;
     const email = emailInput?.value;
-    
-    setIsLoading(true);
-
-    try {
-      // 1. fetch를 사용해 REST API 호출
-      const response = await fetch('/api/auth/send-verification', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast.success('인증코드가 메일로 전송되었습니다.');
-        setIsModalOpen(true);
-        return;
-      } 
-
-      if(data.error === "이미 인증코드가 전송되었습니다. 메일을 확인해주세요.") {
-        setIsModalOpen(true);
-        return;
-      };
-
-      toast.error(data.error || '인증코드 발송에 실패했습니다.');
-      
-    } catch (error) {
-      toast.error('오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
-      console.error('Signup failed:', error);
-    } finally {
-        setIsLoading(false);
-    };
-
-  };
-
-  // 이메일 코드 인증 
-  const verifyCode = async (e: FormEvent<HTMLFormElement>) : Promise<void> => {
-    e.preventDefault();
-    const emailInput = formRef.current?.elements.namedItem('email') as HTMLInputElement;
-    const email = emailInput?.value;
-    const codeInput = modalFormRef.current?.elements.namedItem('verifyCode') as HTMLInputElement;
-    const code = codeInput?.value;
 
     setIsLoading(true);
 
     try {
-      // 1. fetch를 사용해 REST API 호출
-      const response = await fetch('/api/auth/verify-code', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code }),
-      });
+      const response = await POST<SuccessResponse>(SEND_VERIFICATION, { email });
+      const { success, data, error } = response;
 
-      const data = await response.json();
-
-      if (response.ok) {
-        toast.success('인증되었습니다.');
-        setHasVerification(true);
-        setIsModalOpen(false);
-      } else {
-        toast.error(data.error || '인증에 실패했습니다.');
+      if (!success) {
+        toast.error(error.message);
+        throw new Error(error.message);
       }
+
+      toast.success(data.message);
+      setIsModalOpen(true);
     } catch (error) {
-      toast.error('오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
-      console.error('Signup failed:', error);
-    } finally {
-        setIsLoading(false);
-    };
-  }
-
-  // 비밀번호 정책 유효성 검사 함수
-  function validatePassword(password : string) : boolean {
-      // 1. 비밀번호 길이 확인 (6자리 이상)
-      if (password.length < 6) {
-          toast.error("비밀번호는 6자리 이상이어야 합니다.");
-          return false;
-      }
-
-      // 2. 숫자 포함 여부 확인
-      // \d 는 숫자를 의미하는 정규식입니다.
-      const hasNumber = /\d/.test(password);
-      if (!hasNumber) {
-          toast.error("비밀번호에 숫자가 포함되어야 합니다.");
-          return false;
-      }
-
-      // 3. 특수문자 포함 여부 확인
-      // 아래 정규식은 일반적인 특수문자들을 포함합니다.
-      const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-      if (!hasSpecialChar) {
-          toast.error("비밀번호에 특수문자가 포함되어야 합니다.");
-          return false;
-      }
-
-      return true;
-  }
-
-  // 회원가입 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) : Promise<void> => {
-    e.preventDefault();
-
-    // FormData를 사용해 form에서 직접 값을 가져옵니다.
-    const formData = new FormData(e.currentTarget);
-    const name = formData.get('name') as string;
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-    const confirmPassword = formData.get('confirm-password') as string;
-
-    // 비밀번호 정책 유효성 검사
-    if(!validatePassword(password)) return;
-
-    // 비밀번호, 비밀번호 확인 일치한지 확인
-    if (password !== confirmPassword) {
-      toast.error('비밀번호가 일치하지 않습니다.');
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      // 1. fetch를 사용해 REST API 호출
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, name }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast.success('회원가입이 완료되었습니다. 로그인 페이지로 이동합니다.');
-        router.push('/login');
-      } else {
-        toast.error(data.error || '회원가입에 실패했습니다.');
-      }
-    } catch (error) {
-      toast.error('오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
-      console.error('Signup failed:', error);
+      console.error("Signup failed:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // 이메일 코드 인증
+  const verifyCode = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
+    e.preventDefault();
+    const emailInput = formRef.current?.elements.namedItem("email") as HTMLInputElement;
+    const email = emailInput?.value;
+    const codeInput = modalFormRef.current?.elements.namedItem("verifyCode") as HTMLInputElement;
+    const code = codeInput?.value;
+
+    if (!code) {
+      toast.error(VALIDATE_EMAIL_CODE);
+      throw new Error(VALIDATE_EMAIL_CODE);
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await POST<SuccessResponse>(VERIFY_CODE, { email, code });
+      const { success, data, error } = response;
+
+      if (!success) {
+        toast.error(error.message);
+        setHasVerification(false);
+        throw new Error(error.message);
+      }
+
+      toast.success(data.message);
+      setHasVerification(true);
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Signup failed:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 비밀번호 정책 유효성 검사 함수
+  function validatePassword(password: string): boolean {
+    // 1. 비밀번호 길이 확인 (6자리 이상)
+    if (password.length < 6) {
+      toast.error(VALIDATE_LENGTH);
+      throw new Error(VALIDATE_LENGTH);
+    }
+
+    // 2. 숫자 포함 여부 확인
+    // \d 는 숫자를 의미하는 정규식입니다.
+    const hasNumber = /\d/.test(password);
+    if (!hasNumber) {
+      toast.error(VALIDATE_HAS_NUMBER);
+      throw new Error(VALIDATE_HAS_NUMBER);
+    }
+
+    // 3. 특수문자 포함 여부 확인
+    // 아래 정규식은 일반적인 특수문자들을 포함합니다.
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    if (!hasSpecialChar) {
+      toast.error(VALIDATE_HAS_SPECIALCHAR);
+      throw new Error(VALIDATE_HAS_SPECIALCHAR);
+    }
+
+    return true;
+  }
+
+  // 회원가입
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
+    e.preventDefault();
+    setIsLoading(true);
+    // FormData를 사용해 form에서 직접 값을 가져옵니다.
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get("name") as string;
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+    const confirmPassword = formData.get("confirm-password") as string;
+
+    try {
+      // 비밀번호 정책 유효성 검사
+      if (!validatePassword(password)) return;
+
+      // 비밀번호, 비밀번호 확인 일치한지 확인
+      if (password !== confirmPassword) {
+        toast.error(VALIDATE_CONFIRM_PASSWORD);
+        throw new Error(VALIDATE_CONFIRM_PASSWORD);
+      }
+
+      // 이메일 인증 체크
+      if (!hasVerification) {
+        toast.error(VALIDATE_VERIFICATION);
+        setIsModalOpen(true);
+        throw new Error(VALIDATE_VERIFICATION);
+      }
+      const response = await POST<SuccessResponse>(SIGN_UP, { name, email, password });
+      const { success, data, error } = response;
+
+      if (!success) {
+        toast.error(error.message);
+        throw new Error(error.message);
+      }
+
+      toast.success(data.message);
+      router.push(ROUTES.LOGIN);
+    } catch (error) {
+      console.error("Signup failed:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <>
@@ -172,7 +170,7 @@ export default function SignupPage() {
               <p className="text-gray-500 mt-2">새로운 계정을 생성하세요.</p>
             </div>
             <form className="space-y-6" ref={formRef} onSubmit={handleSubmit}>
-            {/* 이름 입력란 */}
+              {/* 이름 입력란 */}
               <div className="space-y-2">
                 <label htmlFor="name" className="text-sm font-medium text-gray-700">
                   이름
@@ -260,9 +258,7 @@ export default function SignupPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
             <h2 className="text-lg font-bold mb-4">인증번호 입력</h2>
-            <p className="text-sm text-gray-600 mb-4">
-              이메일로 전송된 6자리 인증번호를 입력해주세요.
-            </p>
+            <p className="text-sm text-gray-600 mb-4">이메일로 전송된 6자리 인증번호를 입력해주세요.</p>
             <form ref={modalFormRef} onSubmit={verifyCode}>
               <input
                 type="text"
@@ -279,10 +275,7 @@ export default function SignupPage() {
                 >
                   취소
                 </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
-                >
+                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700">
                   인증하기
                 </button>
               </div>

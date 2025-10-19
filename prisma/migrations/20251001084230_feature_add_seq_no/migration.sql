@@ -25,7 +25,10 @@ CREATE TABLE "public"."users" (
 -- CreateTable
 CREATE TABLE "public"."Group" (
     "id" TEXT NOT NULL,
+    "seq" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "no" SERIAL NOT NULL,
 
     CONSTRAINT "Group_pkey" PRIMARY KEY ("id")
 );
@@ -33,7 +36,9 @@ CREATE TABLE "public"."Group" (
 -- CreateTable
 CREATE TABLE "public"."Membership" (
     "userId" INTEGER NOT NULL,
+    "userEmail" TEXT NOT NULL,
     "groupId" TEXT NOT NULL,
+    "groupSeq" INTEGER NOT NULL,
     "role" "public"."Role" NOT NULL,
 
     CONSTRAINT "Membership_pkey" PRIMARY KEY ("userId","groupId")
@@ -58,6 +63,15 @@ CREATE UNIQUE INDEX "verification_tokens_verificationCode_key" ON "public"."veri
 
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "public"."users"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Group_seq_key" ON "public"."Group"("seq");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Group_no_key" ON "public"."Group"("no");
+
+-- CreateIndex
+CREATE INDEX "Membership_groupSeq_idx" ON "public"."Membership"("groupSeq");
 
 -- AddForeignKey
 ALTER TABLE "public"."Membership" ADD CONSTRAINT "Membership_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

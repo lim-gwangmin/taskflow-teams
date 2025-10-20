@@ -23,3 +23,18 @@ export type ContainerProps_type = {
   className?: string;
   style?: CSSProperties;
 };
+
+/* ========== 그룹관련 타입 정의 ========== */
+// 그룹 조회 함수 파라미터 타입
+export type GroupSearchParams = {
+  groupName?: string;
+  currentPage?: number;
+  pageLimit?: number;
+};
+// 탭 리스트 타입
+export type GroupList = {
+  title: string;
+  params: string;
+};
+// 탭 클릭 타입
+export type TabClickHandler = (arg: GroupSearchParams) => Promise<void>;

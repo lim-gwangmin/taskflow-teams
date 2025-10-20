@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
           role: true,
           userEmail: true,
           group: {
-            select: { name: true, no: true },
+            select: { name: true, no: true, admin: true },
           },
         },
         orderBy: {
@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
           role: true,
           userEmail: true,
           group: {
-            select: { name: true, no: true },
+            select: { name: true, no: true, admin: true },
           },
         },
       });
@@ -95,22 +95,6 @@ export async function GET(request: NextRequest) {
         { status: 200 }
       );
     }
-
-    // 특정 그룹 조회
-    if (groupName) {
-    }
-
-    // 특정 그룹 조회
-    return NextResponse.json(
-      {
-        success: true,
-        data: {
-          message: groupName + "그룹조회 성공",
-        },
-        error: null,
-      },
-      { status: 200 }
-    );
   } catch (error) {
     console.error(SERVER_ERROR, "그룹조회 중 오류가 발생했습니다.", error);
     return NextResponse.json(
@@ -123,10 +107,9 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-
 // 그룹 생성
 export async function POST(request: NextRequest) {
-  const { SUCCESS_200, ERROR_409_DUPLICATE_NAME, ERROR_409_ALREADY_MEMBER, ERROR_500 } = GROUP_COMMENTS.SEARCH;
+  const { SUCCESS_200, ERROR_409_DUPLICATE_NAME, ERROR_409_ALREADY_MEMBER, ERROR_500 } = GROUP_COMMENTS.CREATE;
 
   try {
     const { groupName } = await request.json();
@@ -185,7 +168,7 @@ export async function POST(request: NextRequest) {
 
     // => group, membership 테이블에 데이터 추가
     const { newGroup, newMembership } = await prisma.$transaction(async (tx) => {
-      const newGroup = await tx.group.create({ data: { name: groupName } });
+      const newGroup = await tx.group.create({ data: { name: groupName, admin: email } });
       const newMembership = await tx.membership.create({
         data: {
           userEmail: email,
@@ -223,7 +206,6 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
 // 그룹 수정
 export async function PUT() {
   try {

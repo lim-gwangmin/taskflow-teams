@@ -54,12 +54,19 @@ export const AUTH_COMMENTS = {
 // 그룹관련 코멘트
 export const GROUP_COMMENTS = {
   SEARCH: {
+    SUCCESS_200: "그룹조회에 성공하였습니다.",
+    ERROR_401: "일치하는 그룹이 없습니다.",
+    ERROR_402: "권한이 없습니다.",
+    // ERROR_409_DUPLICATE_NAME: "이미 생성된 그룹명 입니다.",
+    // ERROR_409_ALREADY_MEMBER: "이미 속한 그룹입니다.",
+    ERROR_500: "그룹조회 중 오류가 발생했습니다.",
+  },
+  CREATE: {
     SUCCESS_200: "그룹이 생성되었습니다.",
     ERROR_409_DUPLICATE_NAME: "이미 생성된 그룹명 입니다.",
     ERROR_409_ALREADY_MEMBER: "이미 속한 그룹입니다.",
     ERROR_500: "그룹 생성 중 오류가 발생했습니다.",
   },
-  CREATE: {},
   UPDATE: {},
   DELETE: {
     SUCCESS_200: "그룹이 생성되었습니다.",

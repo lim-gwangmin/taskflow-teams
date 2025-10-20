@@ -39,6 +39,7 @@ model Group {
   id          String        @id @default(uuid())
   seq         Int           @unique @default(autoincrement()) // 고유한 숫자 ID
   name        String
+  admin       String        
   createdAt   DateTime      @default(now())
   no          Int           @unique @default(autoincrement()) // 그룹 생성 순서 (최신/오래된순 정렬용)
 

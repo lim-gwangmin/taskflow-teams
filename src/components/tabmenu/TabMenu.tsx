@@ -1,10 +1,10 @@
-import { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect } from "react";
+import { GroupList, TabClickHandler } from "@/types/components";
 
-export default function TabMenu({ menus = [], onClick }) {
-  const tabRefs = useRef([]);
+export default function TabMenu({ menus = [], onClick }: { menus: GroupList[]; onClick: TabClickHandler }) {
+  const tabRefs = useRef<HTMLElement[]>([]);
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   const [indicatorStyle, setIndicatorStyle] = useState({});
-  // 각 탭의 DOM 요소를 저장하기 위한 ref 배열
 
   useEffect(() => {
     const activeTabNode = tabRefs.current[activeTabIndex];
@@ -16,7 +16,7 @@ export default function TabMenu({ menus = [], onClick }) {
     }
   }, [activeTabIndex, menus]);
 
-  const handleTabClick = (index, params) => {
+  const handleTabClick = ({ index, params }: { index: number; params: string }) => {
     setActiveTabIndex(index);
     onClick({ groupName: params });
   };
@@ -28,7 +28,11 @@ export default function TabMenu({ menus = [], onClick }) {
           <li
             key={index}
             // 3. 각 li 요소를 ref 배열에 저장
-            ref={(el) => (tabRefs.current[index] = el)}
+            ref={(el) => {
+              if (el) {
+                tabRefs.current[index] = el;
+              }
+            }}
           >
             <button
               type="button"
@@ -36,7 +40,7 @@ export default function TabMenu({ menus = [], onClick }) {
               className={`px-4 py-3 text-base font-medium transition-colors duration-300 ${
                 activeTabIndex === index ? "text-blue-500 font-semibold" : "text-gray-500"
               }`}
-              onClick={() => handleTabClick(index, menu.params)}
+              onClick={() => handleTabClick({ index, params: menu.params })}
             >
               {menu.title}
             </button>

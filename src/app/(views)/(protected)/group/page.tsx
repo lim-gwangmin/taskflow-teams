@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { POST, GET } from "@/lib/axiosInstans";
 import { ROUTES } from "@/constants/routes";
 import { GROUP_API_URLS } from "@/constants/api/group";
-import { SuccessResponse, GroupListResponse, GroupWhitMembership } from "@/types/response_type";
+import { SuccessResponse, GroupListResponse, GroupList } from "@/types/response_type";
 import TabMenu from "@/components/tabmenu/TabMenu";
 import { GroupSearchParams } from "@/types/components";
 import useCustomRouter from "@/hooks/useCustomRouter";
@@ -14,29 +14,40 @@ import useCustomRouter from "@/hooks/useCustomRouter";
 const menuItems = [
   { title: "전체", params: "" },
   { title: "관리", params: "admin" },
-  { title: "내 그룹", params: "user" },
+  { title: "내 그룹", params: "viewer" },
 ];
 
 export default function GropPage() {
   const formRef = useRef<HTMLFormElement>(null);
   const { handleRoute } = useCustomRouter();
   const { setIsLoading } = useLoader(false);
-  const [groups, setGroups] = useState<GroupWhitMembership[]>([]);
-
+  const [groups, setGroups] = useState<GroupList[]>([]);
+  const [pagination, setpPagination] = useState<GroupListResponse["pagination"]>({
+    currentPage: 1,
+    totalPages: 1,
+    totalCount: 1,
+    hasPrevPage: false,
+    hasNextPage: false,
+  });
   useEffect(() => {
     handleSearchGroup({});
   }, []);
   // 그룹 생성
   const submitCreateGroup = async (e: FormEvent<HTMLElement>): Promise<void> => {
     e.preventDefault();
-
     setIsLoading(true);
 
-    const groupNameInput = formRef.current?.elements.namedItem("groupName") as HTMLInputElement;
-    const groupName = groupNameInput.value;
+    if (!formRef.current) {
+      throw new Error("?");
+    }
+
+    const formData = new FormData(formRef.current);
+    const groupName = formData.get("groupName");
+    const description = formData.get("description");
+    const userLimit = formData.get("userLimit");
 
     try {
-      const response = await POST<SuccessResponse>(GROUP_API_URLS.GROUP, { groupName });
+      const response = await POST<SuccessResponse>(GROUP_API_URLS.GROUP, { groupName, description, userLimit });
       const { success, data, error } = response;
 
       if (!success) {
@@ -69,7 +80,9 @@ export default function GropPage() {
       }
 
       const groupData = data.groups || [];
+      const paginationData = data.pagination;
       setGroups(groupData);
+      setpPagination(paginationData);
     } catch (error) {
       console.error(error);
     } finally {
@@ -77,28 +90,42 @@ export default function GropPage() {
     }
   };
   // 그룹 상세페이지 이동
-  const handleMoveToGroupDetailPage = (groupSeq: number) => {
-    handleRoute(ROUTES.GROUP + `/${groupSeq}`);
+  const handleMoveToGroupDetailPage = ({ seq }: { seq: number }) => {
+    handleRoute(ROUTES.GROUP + `/${seq}`);
   };
 
   return (
     <>
-      group page
+      <h2 style={{ fontSize: "20px", fontWeight: "bold" }}>그룹 생성 영역</h2>
       {/* 그룹 생성 */}
       <form ref={formRef} onSubmit={submitCreateGroup}>
-        <input type="text" name="groupName" placeholder="그룹명을 입력해주세요." />
+        <section>
+          <h4>그룹명</h4>
+          <input type="text" name="groupName" placeholder="그룹명을 입력해주세요." />
+        </section>
+        <section>
+          <h4>그룹 인원 제한</h4>
+          <input type="number" min={2} max={50} defaultValue={2} name="userLimit" placeholder="인원 제한 설정" />
+        </section>
+        <section>
+          <h4>그룹 소개</h4>
+          <textarea name="description" placeholder="내 그룹을 설명해주세요." />
+        </section>
         <button type="submit">그룹생성</button>
       </form>
+      <h2 style={{ fontSize: "20px", fontWeight: "bold", borderTop: "2px solid #333" }}>그룹 조회 영역</h2>
       {/* 탭메뉴 */}
       <TabMenu menus={menuItems} onClick={handleSearchGroup} />
       <ul>
         {/* 그룹 리스트 */}
-        {groups.map((arg, index) => (
+        {groups.map((group, index) => (
           <li key={index}>
-            <button onClick={() => handleMoveToGroupDetailPage(arg.groupSeq)} type="button">
+            <button onClick={() => handleMoveToGroupDetailPage({ seq: group.seq })} type="button">
               <p>순서: {index + 1}</p>
-              <p>그룹명: {arg.group.name}</p>
-              <p>그룹장: {arg.userEmail}</p>
+              <p>그룹명: {group.name}</p>
+              <p>
+                그룹장: {group.user.nickname}#{group.user.discriminator}
+              </p>
             </button>
           </li>
         ))}

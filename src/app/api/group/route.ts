@@ -15,6 +15,10 @@ export async function GET(request: NextRequest) {
     const groupName = searchParams.get("groupName");
     const currentPage = searchParams.get("currentPage");
     const pageLimit = searchParams.get("pageLimit");
+    //
+    const page = parseInt(currentPage || "1"); // 기본값 1
+    const limit = parseInt(pageLimit || "10"); // 기본값 10
+    const skip = (page - 1) * limit;
 
     // 유저 인증
     if (!currentUser) {
@@ -32,35 +36,142 @@ export async function GET(request: NextRequest) {
      * groupName parameter
      * "" = 전체 그룹 조회
      * "admin" = 내가 만든 그룹 조회
-     * "user" = 내가 가입한 그룹 조회
+     * "viewer" = 내가 가입한 그룹 조회
      */
 
-    // 전체 그룹 조회
-    if (!groupName) {
-      const getAllGroups = await prisma.membership.findMany({
-        // where 조건을 아예 넣지 않습니다.
-        // 필요한 필드만 선택하거나 정렬 순서를 지정할 수 있습니다.
-        select: {
-          groupSeq: true,
-          role: true,
-          userEmail: true,
-          group: {
-            select: { name: true, no: true, admin: true },
-          },
+    const { seq: userSeq } = currentUser;
+    // 내가 만든 그룹 조회
+    if (groupName === "admin") {
+      const whereCondition = {
+        memberships: {
+          some: { userSeq, role: Role.ADMIN },
         },
-        orderBy: {
-          group: {
-            createdAt: "desc",
+      };
+      const [totalCount, groupsData] = await prisma.$transaction([
+        prisma.group.count({ where: whereCondition }),
+        prisma.group.findMany({
+          where: whereCondition,
+          select: {
+            seq: true,
+            no: true,
+            name: true,
+            createdAt: true,
+            description: true,
+            userLimit: true,
+            user: { select: { nickname: true, discriminator: true } },
           },
+          orderBy: { createdAt: "desc" },
+          skip: skip, // 건너뛸 개수
+          take: limit, // 가져올 개수
+        }),
+      ]);
+      const totalPages = Math.ceil(totalCount / limit);
+      const hasNextPage = page < totalPages;
+      const hasPrevPage = page > 1 && page >= totalPages;
+      return NextResponse.json(
+        {
+          success: true,
+          data: {
+            message: "내가 만든 그룹 조회 성공",
+            groups: groupsData,
+            pagination: {
+              currentPage: page,
+              totalPages: totalPages,
+              totalCount: totalCount,
+              hasPrevPage: hasPrevPage,
+              hasNextPage: hasNextPage,
+            },
+          },
+          error: null,
         },
-      });
+        { status: 200 }
+      );
+    }
+    // 내가 가입한 그룹 조회
+    if (groupName === "viewer") {
+      const whereCondition = {
+        memberships: {
+          some: { userSeq, role: Role.VIEWER },
+        },
+      };
+      const [totalCount, groupsData] = await prisma.$transaction([
+        prisma.group.count({ where: whereCondition }),
+        prisma.group.findMany({
+          where: whereCondition,
+          select: {
+            seq: true,
+            no: true,
+            name: true,
+            createdAt: true,
+            description: true,
+            userLimit: true,
+            user: { select: { nickname: true, discriminator: true } },
+          },
+          orderBy: { createdAt: "desc" },
+          skip: skip, // 건너뛸 개수
+          take: limit, // 가져올 개수
+        }),
+      ]);
+      const totalPages = Math.ceil(totalCount / limit);
+      const hasNextPage = page < totalPages;
+      const hasPrevPage = page > 1 && page >= totalPages;
+      return NextResponse.json(
+        {
+          success: true,
+          data: {
+            message: "내가 가입한 그룹 조회 성공",
+            groups: groupsData,
+            pagination: {
+              currentPage: page,
+              totalPages: totalPages,
+              totalCount: totalCount,
+              hasPrevPage: hasPrevPage,
+              hasNextPage: hasNextPage,
+            },
+          },
+          error: null,
+        },
+        { status: 200 }
+      );
+    }
+
+    // 특정 그룹 조회
+    if (groupName) {
+      const [totalCount, groupsData] = await prisma.$transaction([
+        prisma.group.count({ where: { name: groupName } }),
+        prisma.group.findMany({
+          where: { name: groupName },
+          select: {
+            seq: true,
+            no: true,
+            name: true,
+            description: true,
+            userLimit: true,
+            createdAt: true,
+            user: { select: { nickname: true, discriminator: true } },
+          },
+          orderBy: { createdAt: "desc" },
+          skip: skip, // 건너뛸 개수
+          take: limit, // 가져올 개수
+        }),
+      ]);
+      const totalPages = Math.ceil(totalCount / limit);
+      const hasNextPage = page < totalPages;
+      const hasPrevPage = page > 1 && page >= totalPages;
 
       return NextResponse.json(
         {
           success: true,
           data: {
             message: "전체 그룹 조회 성공",
-            groups: getAllGroups,
+            groups: groupsData,
+            pagination: {
+              currentPage: page,
+              totalPages: totalPages,
+              totalCount: totalCount,
+              hasPrevPage: hasPrevPage,
+              hasNextPage: hasNextPage,
+            },
           },
           error: null,
         },
@@ -68,33 +179,47 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 내가 속한 모든 그룹 조회
-    if (!groupName) {
-      // 내가 속한 그룹 조회
-      const getGroups = await prisma.membership.findMany({
-        where: { userId: currentUser.id, userEmail: currentUser.email },
+    // 전체그룹 조회
+    const [totalCount, groupsData] = await prisma.$transaction([
+      prisma.group.count(),
+      prisma.group.findMany({
         select: {
-          groupSeq: true,
-          role: true,
-          userEmail: true,
-          group: {
-            select: { name: true, no: true, admin: true },
+          seq: true,
+          no: true,
+          name: true,
+          description: true,
+          userLimit: true,
+          createdAt: true,
+          user: { select: { nickname: true, discriminator: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        skip: skip, // 건너뛸 개수
+        take: limit, // 가져올 개수
+      }),
+    ]);
+    // --- 3. 페이지네이션 메타데이터 계산 ---
+    const totalPages = Math.ceil(totalCount / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1 && page >= totalPages;
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          message: "전체 그룹 조회 성공",
+          groups: groupsData,
+          pagination: {
+            // 페이지네이션 정보 추가
+            currentPage: page,
+            totalPages: totalPages,
+            totalCount: totalCount,
+            hasPrevPage: hasPrevPage,
+            hasNextPage: hasNextPage,
           },
         },
-      });
-
-      return NextResponse.json(
-        {
-          success: true,
-          data: {
-            message: "내가 속한 그룹 조회 성공",
-            groups: getGroups,
-          },
-          error: null,
-        },
-        { status: 200 }
-      );
-    }
+        error: null,
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error(SERVER_ERROR, "그룹조회 중 오류가 발생했습니다.", error);
     return NextResponse.json(
@@ -112,7 +237,7 @@ export async function POST(request: NextRequest) {
   const { SUCCESS_200, ERROR_409_DUPLICATE_NAME, ERROR_409_ALREADY_MEMBER, ERROR_500 } = GROUP_COMMENTS.CREATE;
 
   try {
-    const { groupName } = await request.json();
+    const { groupName, description, userLimit } = await request.json();
     const currentUser = await getCurrentUser();
 
     if (!currentUser) {
@@ -126,7 +251,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { id: userId, email } = currentUser;
+    const { seq: userSeq, nickname, discriminator } = currentUser;
 
     if (!groupName) {
       throw new Error("그룹명을 입력해주세요.");
@@ -150,7 +275,7 @@ export async function POST(request: NextRequest) {
 
     // 이미 속한 그룹인지 체크
     const userMemberships = await prisma.membership.findMany({
-      where: { userId },
+      where: { userSeq },
       include: { group: true },
     });
     const findAlreadyMember = userMemberships.find((m) => m.group.name === groupName);
@@ -168,11 +293,17 @@ export async function POST(request: NextRequest) {
 
     // => group, membership 테이블에 데이터 추가
     const { newGroup, newMembership } = await prisma.$transaction(async (tx) => {
-      const newGroup = await tx.group.create({ data: { name: groupName, admin: email } });
+      const newGroup = await tx.group.create({
+        data: {
+          name: groupName,
+          adminSeq: userSeq,
+          description,
+          userLimit: Number(userLimit),
+        },
+      });
       const newMembership = await tx.membership.create({
         data: {
-          userEmail: email,
-          userId,
+          userSeq,
           groupSeq: newGroup.seq,
           groupId: newGroup.id,
           role: Role.ADMIN,
@@ -207,9 +338,75 @@ export async function POST(request: NextRequest) {
   }
 }
 // 그룹 수정
-export async function PUT() {
+export async function PUT(request: NextRequest) {
+  const { SUCCESS_200, ERROR_500 } = GROUP_COMMENTS.CREATE;
   try {
-  } catch (error) {}
+    const currentUser = await getCurrentUser();
+
+    // 유저 인증
+    if (!currentUser) {
+      return NextResponse.json(
+        {
+          success: false,
+          data: null,
+          error: { message: CURRENT_USER },
+        },
+        { status: 401 }
+      );
+    }
+
+    const { groupSeq, groupName, groupDescription, groupUserLimit } = await request.json();
+    // 그룹 고유코드를 formData에 없는 경우 예외처리
+    if (!groupSeq) {
+      return NextResponse.json(
+        {
+          success: false,
+          data: null,
+          error: { message: "groupSeq값이 없습니다." },
+        },
+        { status: 402 }
+      );
+    }
+
+    const isHasGroup = await prisma.group.findFirst({
+      where: { seq: groupSeq },
+    });
+
+    if (!isHasGroup) {
+      return NextResponse.json(
+        {
+          success: false,
+          data: null,
+          error: { message: "존재하지 않는 그룹입니다." },
+        },
+        { status: 404 }
+      );
+    }
+
+    const updateGroup = await prisma.group.update({
+      where: { seq: groupSeq },
+      data: { name: groupName, description: groupDescription, userLimit: Number(groupUserLimit) },
+    });
+
+    return NextResponse.json(
+      {
+        success: true,
+        data: { message: "성공적으로 수정됐습니다." },
+        error: null,
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error(SERVER_ERROR, ERROR_500, error);
+    return NextResponse.json(
+      {
+        success: false,
+        data: null,
+        error: { message: ERROR_500 },
+      },
+      { status: 500 }
+    );
+  }
 }
 // 그룹 삭제
 export async function DELETE(request: NextRequest) {
@@ -236,13 +433,13 @@ export async function DELETE(request: NextRequest) {
       throw new Error("groupSeq 값이 필요합니다.");
     }
 
-    const { id: userId } = currentUser;
+    const { seq: userSeq } = currentUser;
 
     // 2. 권한 확인: 해당 멤버십을 찾고, 현재 유저가 ADMIN인지 확인합니다.
     const membershipToDelete = await prisma.membership.findFirst({
       where: {
         groupSeq: Number(groupSeq),
-        userId, // 본인의 멤버십만 삭제 가능하도록 보안 강화
+        userSeq, // 본인의 멤버십만 삭제 가능하도록 보안 강화
       },
     });
 

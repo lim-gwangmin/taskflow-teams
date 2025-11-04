@@ -13,11 +13,14 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <Header user={currentUser.name} email={currentUser.email} />
+      <Header currentUser={currentUser} />
       <Container>
         <div>
-          <h1>Welcome, {currentUser.name}!</h1>
-          <p>Your email: {currentUser.email}</p>
+          <h1>
+            반갑습니다! <br />
+            {currentUser.nickname}#{currentUser.discriminator} 님!
+          </h1>
+          <p></p>
         </div>
       </Container>
     </>

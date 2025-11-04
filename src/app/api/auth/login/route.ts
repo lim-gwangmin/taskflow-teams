@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. JWT 토큰 생성
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
+    const token = jwt.sign({ userSeq: user.seq }, process.env.JWT_SECRET!, {
       expiresIn: "7d",
     });
 

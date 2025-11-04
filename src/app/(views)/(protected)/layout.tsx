@@ -18,7 +18,7 @@ export default async function ProtectedLayout({ children }: DefatultProtectProps
 
   return (
     <main>
-      <Header user={currentUser.name} email={currentUser.email} />
+      <Header currentUser={currentUser} />
       <Container>{children}</Container>
     </main>
   );

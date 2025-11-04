@@ -1,5 +1,6 @@
 import { CSSProperties, ReactNode } from "react";
 import { DROPDOWN_COLOR_TYPE, DROPDOWN_STYLE_TYPE } from "@/components/dropdown/types";
+import { Role } from "@prisma/client";
 
 /* ========== 컴포넌트 props 타입 정의 ========== */
 
@@ -38,3 +39,25 @@ export type GroupList = {
 };
 // 탭 클릭 타입
 export type TabClickHandler = (arg: GroupSearchParams) => Promise<void>;
+// 그룹 상세페이지 파라미터 타입
+export type GroupParamsType = {
+  params: {
+    groupSeq: string;
+  };
+};
+// 그룹 상세페이지 그룹데이터 타입
+export type GroupDetailDataType = {
+  groupDatas: {
+    group: {
+      name: string;
+      no: number;
+      createdAt: Date;
+      description: string;
+      userLimit: number;
+    };
+    user: { nickname: string; discriminator: string };
+    groupSeq: number;
+    joinedAt: Date;
+    role: Role;
+  };
+};

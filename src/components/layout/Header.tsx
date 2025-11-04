@@ -8,8 +8,20 @@ import { get_logout } from "@/lib/api/auth";
 import { HeaderProps_type } from "@/types/components";
 import { ROUTES } from "@/constants/routes";
 import Container from "./Container";
+import { CurrentUserSchema } from "@/services/auth";
 
-export default function Header({ user = "", email = "" }: HeaderProps_type) {
+type UserSchemaProp = {
+  currentUser: {
+    name: string;
+    email: string;
+    nickname: string;
+    discriminator: string;
+  };
+};
+
+export default function Header({ currentUser }: UserSchemaProp) {
+  const { name, email, nickname, discriminator } = currentUser;
+
   return (
     <header className="w-full border-b-1 border-solid border-[#c8c8c8] mb-[30px]">
       <Container className="flex justify-between items-center py-[10px] sm:py-[14px] md:py-[16px] lg:py-[20px]">
@@ -19,7 +31,7 @@ export default function Header({ user = "", email = "" }: HeaderProps_type) {
           </h1>
         </div>
         <div>
-          <DropDown title={user} color={DROPDOWN_COLOR.primary} disabledKeys={["profile"]}>
+          <DropDown title={`${nickname}#${discriminator}`} color={DROPDOWN_COLOR.primary} disabledKeys={["profile"]}>
             <DropdownSection aria-label="user">
               <DropdownItem key={"profile"} className="h-14 gap-2 opacity-100" isReadOnly>
                 <User
@@ -32,7 +44,7 @@ export default function Header({ user = "", email = "" }: HeaderProps_type) {
                     description: "text-default-500",
                   }}
                   description={email}
-                  name={user}
+                  name={name}
                 />
               </DropdownItem>
             </DropdownSection>

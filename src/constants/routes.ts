@@ -5,6 +5,7 @@ export const ROUTES = {
   SIGNUP: "/signup",
   DASHBOARD: "/dashboard",
   GROUP: "/group",
+  EDIT: "/edit",
   PROFILE: "/profile",
 } as const;
 

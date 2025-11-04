@@ -4,86 +4,133 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url       = env("PRISMA_DATABASE_URL") 
+  provider  = "postgresql"
+  url       = env("PRISMA_DATABASE_URL")
   directUrl = env("DATABASE_URL")
 }
 
+// 권한 Enum
+enum Role {
+  ADMIN // 관리자
+  MEMBER // 그룹 멤버
+  GUEST // 
+  VIEWER // 
+}
+// 요청 상태 Enum
+enum RequestStatus {
+  PENDING // 대기중
+  APPROVED // 승인됨
+  DENIED // 거절됨
+}
+// 요청 유형 Enum
+enum RequestType {
+  APPLICATION // 유저가 그룹에 가입 신청
+  INVITATION // 그룹이 유저를 초대
+}
+
+
 // 이메일 인증 스키마
 model VerificationToken {
-  id                    String   @id @default(uuid())
-  email                 String   @unique
-  verificationCode      String   @unique
-  expiresAt             DateTime
+  id               String   @id @default(uuid())
+  email            String   @unique
+  verificationCode String   @unique
+  expiresAt        DateTime
 
   @@map("verification_tokens")
 }
 
 // 유저 정보 스키마
 model User {
-  id          Int      @id @default(autoincrement())
-  email       String   @unique
-  password    String
-  name        String?
-  createdAt   DateTime @default(now())
+  seq           Int      @id @default(autoincrement()) // 유저 고유 값
+  email         String   @unique // 유저 이메일 
+  name          String // 유저 이름
+  nickname      String // 유저 닉네임 및 고유 해시코드 값 앞 문자
+  discriminator String // 유저 고유 해시코드 값 뒤 숫자 4자리
+  password      String // 유저 비밀번호
+  createdAt     DateTime @default(now()) // 계정 생성일
 
   // --- 관계 필드 ---
-  memberships Membership[] // 이 유저가 속한 그룹 멤버십 목록
-  posts       Post[]       // 이 유저가 작성한 게시글 목록 (수정)
-  
+  Group             Group[]
+  memberships       Membership[] // 이 유저가 속한 그룹 멤버십 목록
+  membershipRequest MembershipRequest[] // 이 유저가 속한 그룹 초대 및 초대 요청 목록
+  posts             Post[] // 이 유저가 작성한 게시글 목록 (수정)
+
+  @@unique([nickname, discriminator])
   @@map("users")
 }
 
 // 그룹 정보 스키마
 model Group {
-  id          String        @id @default(uuid())
-  seq         Int           @unique @default(autoincrement()) // 고유한 숫자 ID
-  name        String
-  admin       String        
-  createdAt   DateTime      @default(now())
-  no          Int           @unique @default(autoincrement()) // 그룹 생성 순서 (최신/오래된순 정렬용)
+  id          String   @id @default(uuid())
+  seq         Int      @unique @default(autoincrement()) // 고유한 숫자 ID
+  name        String   // 그룹 이름 
+  description String   // 그룹 소개 
+  userLimit   Int      @default(20) // 가입자 수 제한
+  adminSeq    Int      // 그룹 관리자 고유 아이디 
+  createdAt   DateTime @default(now()) // 그룹 생성일
+  no          Int      @unique @default(autoincrement()) // 그룹 생성 순서 (최신/오래된순 정렬용)
 
   // --- 관계 필드 ---
-  memberships Membership[] // 이 그룹에 속한 멤버십 목록
-  posts       Post[]       // 이 그룹에 작성된 게시글 목록
-}
-
-// 권한 Enum
-enum Role {
-  ADMIN
-  MEMBER
-  GUEST
-  VIEWER
+  user        User     @relation(fields: [adminSeq], references: [seq])
+  memberships       Membership[] // 이 그룹에 속한 멤버십 목록
+  membershipRequest MembershipRequest[] // 이 그룹에 대한 초대 및 초대 요청 목록
+  posts             Post[] // 이 그룹에 작성된 게시글 목록
 }
 
 // user, group 사이 관계와 역할 중간 테이블 스키마
 model Membership {
-  userId    Int               // User.id(Int)와 타입 일치
-  userEmail String            // User.email(String unique)와 타입 일치 
-  groupId   String            // Group.id(String)와 타입 일치
-  groupSeq  Int               //  Group.seq(Int)와 타입 일치 (숫자 ID 참조)
-
+  userSeq  Int // User.seq(Int)와 타입 일치
+  groupId  String // Group.id(String)와 타입 일치
+  groupSeq Int //  Group.seq(Int)와 타입 일치 (숫자 ID 참조)
+  joinedAt DateTime @default(now()) // 그룹 가입일
   // --- 관계 필드 ---
-  user    User   @relation(fields: [userId], references: [id])
-  group   Group  @relation(fields: [groupId], references: [id])
-  role    Role
+  group    Group    @relation(fields: [groupId], references: [id])
+  role     Role
+  user     User     @relation(fields: [userSeq], references: [seq])
 
   // 복합 기본 키 (Composite Primary Key)
-  @@id([userId, groupId])
+  @@id([userSeq, groupId])
   // 🔽 복합 인덱스 추가 (groupId 대신 groupSeq로 그룹을 특정할 때 사용)
   @@index([groupSeq])
 }
 
+// 그룹 가입 신청 테이블 
+model MembershipRequest {
+  seq      Int @id @default(autoincrement())
+
+  // 어느 그룹에 대한 요청인지 (groupSeq 사용)
+  groupSeq Int
+  group    Group @relation(fields: [groupSeq], references: [seq])
+
+  // 어떤 유저에 대한 요청인지
+  userSeq Int
+
+  // 1. 요청의 현재 상태 (필수!)
+  status RequestStatus @default(PENDING)
+
+  // 2. 유저가 신청 or 그룹이 초대
+  type    RequestType
+  message String? // 가입 신청 메시지 또는 초대 메시지 (선택 사항)
+
+  // 3. 사용자가 제안한 '가입신청 현재 날짜'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt // 상태 변경 시각을 추적하기 위해 추가
+  user      User     @relation(fields: [userSeq], references: [seq]) 
+
+  // 한 유저가 한 그룹에 동일한 유형의 요청을 중복으로 보낼 수 없도록 설정
+  @@unique([userSeq, groupSeq, type])
+}
+
 // 그룹 내 작성한 글 정보 스키마
 model Post {
-  id        String @id @default(uuid())
-  title     String
-  content   String
-  
-  authorId  Int    // User.id(Int)와 타입 일치 (수정)
-  groupId   String // Group.id(String)와 타입 일치
-  
+  seq     String @id @default(uuid())
+  title   String
+  content String
+
+  authorId Int // User.Seq(Int)와 타입 일치 (수정)
+  groupId  String // Group.id(String)와 타입 일치
+
   // --- 관계 필드 ---
-  author    User   @relation(fields: [authorId], references: [id])
-  group     Group  @relation(fields: [groupId], references: [id])
+  author User  @relation(fields: [authorId], references: [seq])
+  group  Group @relation(fields: [groupId], references: [id])
 }

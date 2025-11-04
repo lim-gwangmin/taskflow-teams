@@ -38,7 +38,7 @@ export default function GropPage() {
     setIsLoading(true);
 
     if (!formRef.current) {
-      throw new Error("?");
+      throw new Error("formRef.current 속성이 없습니다.");
     }
 
     const formData = new FormData(formRef.current);

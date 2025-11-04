@@ -459,19 +459,21 @@ export async function DELETE(request: NextRequest) {
     const groupIdToDelete = membershipToDelete.groupId;
 
     await prisma.$transaction(async (tx) => {
-      // ⚠️ 중요: group을 삭제하기 전에, 해당 group을 참조하는 모든 membership을 먼저 삭제해야 합니다.
-      // (다른 사용자가 그룹에 속해 있을 수 있기 때문입니다.)
       await tx.membership.deleteMany({
         where: { groupId: groupIdToDelete },
       });
-
-      // 이제 group을 안전하게 삭제할 수 있습니다.
       await tx.group.delete({
         where: { id: groupIdToDelete },
       });
     });
-
-    return NextResponse.json({ message: "그룹이 성공적으로 삭제되었습니다." }, { status: 200 });
+    return NextResponse.json(
+      {
+        success: true,
+        data: { message: "그룹이 성공적으로 삭제되었습니다." },
+        error: null,
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error(SERVER_ERROR, "그룹삭제 중 오류가 발생했습니다.", error);
     return NextResponse.json(

@@ -1,18 +1,32 @@
 "use client";
+import Link from "next/link";
 import { GROUP_API_URLS } from "@/constants/api/group";
 import { Button } from "@heroui/button";
 import { ROUTES } from "@/constants/routes";
-import { DELETE, PUT } from "@/lib/axiosInstans";
-import Link from "next/link";
+import { DELETE } from "@/lib/axiosInstans";
+import { toast } from "sonner";
+import { SuccessResponse } from "@/types/response_type";
+import useCustomRouter from "@/hooks/useCustomRouter";
 
 export function GroupDeleteButton({ groupSeq }: { groupSeq: number }) {
+  const { handleBackRoute } = useCustomRouter();
+
   const handleGroupDelete = async ({ groupSeq }: { groupSeq: number }) => {
     try {
-      const response = await DELETE(GROUP_API_URLS.GROUP + `?groupSeq=${groupSeq}`);
+      const response = await DELETE<SuccessResponse>(GROUP_API_URLS.GROUP + `?groupSeq=${groupSeq}`);
 
-      console.log(response, "response");
+      const { data, success, error } = response;
+
+      if (!success) {
+        toast.error(error.message);
+        throw new Error("오류가 발생했습니다.");
+      }
+
+      toast.success(data.message);
+      handleBackRoute();
     } catch (error) {
       console.error(error);
+    } finally {
     }
   };
 

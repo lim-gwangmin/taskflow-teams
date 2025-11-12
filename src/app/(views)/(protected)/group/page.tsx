@@ -10,6 +10,7 @@ import { SuccessResponse, GroupListResponse, GroupList } from "@/types/response_
 import TabMenu from "@/components/tabmenu/TabMenu";
 import { GroupSearchParams } from "@/types/components";
 import useCustomRouter from "@/hooks/useCustomRouter";
+import { Pagination, Spinner } from "@heroui/react";
 
 const menuItems = [
   { title: "전체", params: "" },
@@ -20,7 +21,7 @@ const menuItems = [
 export default function GropPage() {
   const formRef = useRef<HTMLFormElement>(null);
   const { handleRoute } = useCustomRouter();
-  const { setIsLoading } = useLoader(false);
+  const { isLoading, setIsLoading } = useLoader(false);
   const [groups, setGroups] = useState<GroupList[]>([]);
   const [pagination, setpPagination] = useState<GroupListResponse["pagination"]>({
     currentPage: 1,
@@ -29,6 +30,7 @@ export default function GropPage() {
     hasPrevPage: false,
     hasNextPage: false,
   });
+
   useEffect(() => {
     handleSearchGroup({});
   }, []);
@@ -116,20 +118,37 @@ export default function GropPage() {
       <h2 style={{ fontSize: "20px", fontWeight: "bold", borderTop: "2px solid #333" }}>그룹 조회 영역</h2>
       {/* 탭메뉴 */}
       <TabMenu menus={menuItems} onClick={handleSearchGroup} />
-      <ul>
-        {/* 그룹 리스트 */}
-        {groups.map((group, index) => (
-          <li key={index}>
-            <button onClick={() => handleMoveToGroupDetailPage({ seq: group.seq })} type="button">
-              <p>순서: {index + 1}</p>
-              <p>그룹명: {group.name}</p>
-              <p>
-                그룹장: {group.user.nickname}#{group.user.discriminator}
-              </p>
-            </button>
-          </li>
-        ))}
-      </ul>
+      {isLoading ? (
+        <Spinner size="lg" />
+      ) : (
+        <ul>
+          {/* 그룹 리스트 */}
+          {groups.map((group, index) => (
+            <li key={index}>
+              <button onClick={() => handleMoveToGroupDetailPage({ seq: group.seq })} type="button">
+                <p>순서: {index + 1}</p>
+                <p>그룹명: {group.name}</p>
+                <p>
+                  그룹장: {group.user.nickname}#{group.user.discriminator}
+                </p>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {pagination && groups.length ? (
+        <Pagination
+          color="secondary"
+          initialPage={pagination.currentPage}
+          page={pagination.currentPage}
+          total={pagination.totalPages}
+          onChange={(currentPage) => {
+            handleSearchGroup({ currentPage });
+          }}
+        />
+      ) : (
+        <></>
+      )}
     </>
   );
 }

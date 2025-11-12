@@ -3,11 +3,14 @@ import Link from "next/link";
 import { GROUP_API_URLS } from "@/constants/api/group";
 import { Button } from "@heroui/button";
 import { ROUTES } from "@/constants/routes";
-import { DELETE } from "@/lib/axiosInstans";
+import { DELETE, POST } from "@/lib/axiosInstans";
 import { toast } from "sonner";
+import useLoader from "@/hooks/useLoader";
 import { SuccessResponse } from "@/types/response_type";
 import useCustomRouter from "@/hooks/useCustomRouter";
+import { MEMBER_SHIP_CONSTANTS } from "@/constants/group";
 
+// 그룹 삭제
 export function GroupDeleteButton({ groupSeq }: { groupSeq: number }) {
   const { handleBackRoute } = useCustomRouter();
 
@@ -37,7 +40,41 @@ export function GroupDeleteButton({ groupSeq }: { groupSeq: number }) {
   );
 }
 
+// 그룹 수정
 export function GroupUpdateButton({ groupSeq }: { groupSeq: number }) {
   const { GROUP, EDIT } = ROUTES;
   return <Link href={`${GROUP}/${groupSeq}/${EDIT}`}>그룹수정</Link>;
+}
+
+// 유저 => 그룹 가입 신청
+export function GroupPermissionRequestButton({ groupSeq }: { groupSeq: number }) {
+  const { setIsLoading } = useLoader(false);
+  const requestType = MEMBER_SHIP_CONSTANTS.REQUEST.TYPE.APPLICATION;
+
+  // 그룹 가입 신청 이벤트
+  const handleGroupRequest = async () => {
+    setIsLoading(true);
+
+    try {
+      const response = await POST<SuccessResponse>(GROUP_API_URLS.MEMBER_SHIP, { groupSeq, requestType });
+
+      const { success, error, data } = response;
+
+      console.log(response);
+
+      if (error) {
+        console.error(error.message);
+        toast.error(error.message);
+        throw new Error(error.message);
+      }
+
+      toast.success(data.message);
+    } catch (error) {
+      console.error("asd", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return <button onClick={handleGroupRequest}>가입 신청</button>;
 }

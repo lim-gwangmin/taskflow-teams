@@ -1,4 +1,4 @@
-import { Group } from "@prisma/client";
+import { Group, MembershipRequest } from "@prisma/client";
 
 // API 요청 성공 제네릭 타입.
 export interface SuccessResponse {
@@ -31,9 +31,34 @@ export interface GroupListResponse extends SuccessResponse {
   };
 }
 
+export type MemberRequestItem = {
+  seq: number;
+  userSeq: number;
+  groupSeq: number;
+  status: string;
+  type: string;
+  createdAt: Date;
+  updatedAt: Date;
+  group: {
+    name: string;
+    description: string;
+    seq: number;
+  };
+  user: {
+    seq: number;
+    name: string;
+    nickname: string;
+    discriminator: string;
+  };
+};
 // 그룹 수정 response 타입
-
-// 그룹 상세 조회 response 타입
-// export interface GroupDetailResponse extends SuccessResponse {
-//   groupDatas?: GroupWhitMembership[];
-// }
+export interface MemberShipResponse extends SuccessResponse {
+  result: MemberRequestItem[];
+  // pagination?: {
+  //   currentPage: number;
+  //   totalPages: number;
+  //   totalCount: number;
+  //   hasPrevPage: boolean;
+  //   hasNextPage: boolean;
+  // };
+}

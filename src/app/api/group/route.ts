@@ -11,14 +11,6 @@ const { CURRENT_USER } = COMMON_COMMENTS.AUTH;
 export async function GET(request: NextRequest) {
   try {
     const currentUser = await getCurrentUser();
-    const searchParams = request.nextUrl.searchParams;
-    const groupName = searchParams.get("groupName");
-    const currentPage = searchParams.get("currentPage");
-    const pageLimit = searchParams.get("pageLimit");
-    //
-    const page = parseInt(currentPage || "1"); // 기본값 1
-    const limit = parseInt(pageLimit || "10"); // 기본값 10
-    const skip = (page - 1) * limit;
 
     // 유저 인증
     if (!currentUser) {
@@ -38,8 +30,16 @@ export async function GET(request: NextRequest) {
      * "admin" = 내가 만든 그룹 조회
      * "viewer" = 내가 가입한 그룹 조회
      */
-
     const { seq: userSeq } = currentUser;
+    const searchParams = request.nextUrl.searchParams;
+    const groupName = searchParams.get("groupName");
+    const currentPage = searchParams.get("currentPage");
+    const pageLimit = searchParams.get("pageLimit");
+    // pagination
+    const page = parseInt(currentPage || "1"); // 기본값 1
+    const limit = parseInt(pageLimit || "10"); // 기본값 10
+    const skip = (page - 1) * limit;
+
     // 내가 만든 그룹 조회
     if (groupName === "admin") {
       const whereCondition = {

@@ -5,12 +5,15 @@ import { formattedDate } from "@/utils/date-fns";
 import { Button } from "@heroui/button";
 import { ROUTES } from "@/constants/routes";
 import { GroupParamsType, GroupDetailDataType } from "@/types/components";
-import { GroupDeleteButton, GroupUpdateButton } from "@/components/button/GroupUpdateButtons";
+import {
+  GroupDeleteButton,
+  GroupUpdateButton,
+  GroupPermissionRequestButton,
+} from "@/components/button/GroupUpdateButtons";
 
 // 그룹 상세 페이지
 const GetGroupDetailComponent = ({ groupDatas }: GroupDetailDataType) => {
   const { group, role, groupSeq, user } = groupDatas;
-  console.log(groupDatas, "groupDatas");
   const isAdmin = role === "ADMIN" ? true : false;
   const joinedAt = formattedDate(groupDatas.joinedAt);
   const createdAt = formattedDate(group.createdAt);
@@ -52,9 +55,10 @@ const GetGroupDetailComponent = ({ groupDatas }: GroupDetailDataType) => {
 };
 
 // 권한이 없다는 페이지
-const NotPermissionComponent = ({ url = "/" }: { url: string }) => (
+const NotPermissionComponent = ({ groupSeq, url = "/" }: { groupSeq: number; url: string }) => (
   <div>
     <h4>권한이 없습니다.</h4>
+    <GroupPermissionRequestButton groupSeq={groupSeq} />
     <Link href={url}>뒤로가기</Link>
   </div>
 );
@@ -75,7 +79,7 @@ export default async function GroupDetailPage({ params }: GroupParamsType) {
     // 권한이 없거나 예외 에러가 발생했을 시
     if (error) {
       console.error(error.message);
-      return NotPermissionComponent({ url: ROUTES.GROUP });
+      return NotPermissionComponent({ groupSeq: typeofNumberGroupSeq, url: ROUTES.GROUP });
     }
 
     const { groupDatas } = data;

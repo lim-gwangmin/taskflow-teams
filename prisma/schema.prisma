@@ -13,8 +13,8 @@ datasource db {
 enum Role {
   ADMIN // 관리자
   MEMBER // 그룹 멤버
-  GUEST // 
   VIEWER // 
+  GUEST // 
 }
 // 요청 상태 Enum
 enum RequestStatus {
@@ -100,21 +100,21 @@ model MembershipRequest {
 
   // 어느 그룹에 대한 요청인지 (groupSeq 사용)
   groupSeq Int
-  group    Group @relation(fields: [groupSeq], references: [seq])
-
+  
   // 어떤 유저에 대한 요청인지
   userSeq Int
 
-  // 1. 요청의 현재 상태 (필수!)
+  // 요청의 현재 상태
   status RequestStatus @default(PENDING)
 
-  // 2. 유저가 신청 or 그룹이 초대
+  // 유저가 신청 or 그룹이 초대
   type    RequestType
   message String? // 가입 신청 메시지 또는 초대 메시지 (선택 사항)
 
-  // 3. 사용자가 제안한 '가입신청 현재 날짜'
+  // 사용자가 제안한 '가입신청 현재 날짜'
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt // 상태 변경 시각을 추적하기 위해 추가
+  group    Group @relation(fields: [groupSeq], references: [seq])
   user      User     @relation(fields: [userSeq], references: [seq]) 
 
   // 한 유저가 한 그룹에 동일한 유형의 요청을 중복으로 보낼 수 없도록 설정

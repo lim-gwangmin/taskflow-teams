@@ -308,15 +308,15 @@ export async function DELETE(request: NextRequest) {
 
     const { seq: userSeq } = currentUser;
 
-    // 2. 권한 확인: 해당 멤버십을 찾고, 현재 유저가 ADMIN인지 확인합니다.
+    // 2. 권한 확인: 해당 멤버십을 찾고, 현재 유저가 ADMIN인지 확인
     const membershipToDelete = await prisma.membership.findFirst({
       where: {
         groupSeq: Number(groupSeq),
-        userSeq, // 본인의 멤버십만 삭제 가능하도록 보안 강화
+        userSeq,
       },
     });
 
-    // 멤버십이 없거나 권한이 ADMIN이 아니면 에러를 반환합니다.
+    // 멤버십이 없거나 권한이 ADMIN이 아니면 에러를 반환
     if (!membershipToDelete || membershipToDelete.role !== "ADMIN") {
       return NextResponse.json(
         {
@@ -328,15 +328,17 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // 3. 트랜잭션 시작: 여러 데이터베이스 작업을 하나로 묶습니다.
-    const groupIdToDelete = membershipToDelete.groupId;
+    const groupIdToDelete = membershipToDelete.groupSeq;
 
     await prisma.$transaction(async (tx) => {
       await tx.membership.deleteMany({
-        where: { groupId: groupIdToDelete },
+        where: { groupSeq: groupIdToDelete },
+      });
+      await tx.membershipRequest.deleteMany({
+        where: { groupSeq: groupIdToDelete },
       });
       await tx.group.delete({
-        where: { id: groupIdToDelete },
+        where: { seq: groupIdToDelete },
       });
     });
     return NextResponse.json(

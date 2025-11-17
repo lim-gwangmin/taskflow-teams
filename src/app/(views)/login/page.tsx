@@ -6,12 +6,14 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { POST } from "@/lib/axiosInstans";
 import { AUTH_API_URLS } from "@/constants/api/auth";
-import { SuccessResponse } from "@/types/response_type";
+import { LoginResponse, SuccessResponse } from "@/types/response_type";
 import { ROUTES } from "@/constants/routes";
+import { useUserStore } from "@/store/userStore";
 const { LOG_IN } = AUTH_API_URLS;
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useUserStore();
   const { setIsLoading } = useLoader(false);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -25,14 +27,14 @@ export default function LoginPage() {
     const rememberMe = formData.has("rememberMe") as boolean;
 
     try {
-      const response = await POST<SuccessResponse>(LOG_IN, { email, password, rememberMe });
+      const response = await POST<LoginResponse>(LOG_IN, { email, password, rememberMe });
       const { success, data, error } = response;
 
       if (!success) {
         toast.error(error.message);
         throw new Error(error.message);
       }
-
+      login(data.user);
       router.push(ROUTES.DASHBOARD);
     } catch (error) {
       console.error(error);

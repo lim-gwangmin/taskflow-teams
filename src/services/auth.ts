@@ -1,15 +1,7 @@
 import { cookies } from "next/headers";
 import { verify } from "jsonwebtoken";
 import { prisma } from "@/lib/prisma";
-
-// 쿠키 유저 정보 타입
-export type CurrentUserSchema = {
-  seq: number;
-  name: string;
-  email: string;
-  nickname: string;
-  discriminator: string;
-} | null;
+import { CurrentUserSchema } from "@/types/auth";
 
 // 유저 정보 조회
 export const getCurrentUser = async (): Promise<CurrentUserSchema> => {

@@ -4,6 +4,7 @@ import Header from "@/components/layout/Header";
 import { ROUTES } from "@/constants/routes";
 import { redirect } from "next/navigation";
 import Container from "@/components/layout/Container";
+import StoreUserInital from "@/components/storeInitializer/StoreInitializer";
 
 type DefatultProtectProps = {
   children: ReactNode;
@@ -19,6 +20,7 @@ export default async function ProtectedLayout({ children }: DefatultProtectProps
   return (
     <main>
       <Header currentUser={currentUser} />
+      <StoreUserInital currentUser={currentUser} />
       <Container>{children}</Container>
     </main>
   );

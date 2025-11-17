@@ -225,15 +225,13 @@ export async function PUT(request: NextRequest) {
         { status: 401 }
       );
     }
-    const { memberShipSeq, groupSeq: stringGroupSeq, status, role = "GUEST" } = await request.json();
+    const { targetUserSeq, memberShipSeq, groupSeq: stringGroupSeq, status, role = "GUEST" } = await request.json();
     const { seq: stringUserSeq } = currentUser;
 
     const seq = Number(memberShipSeq);
     const userSeq = Number(stringUserSeq);
     const groupSeq = Number(stringGroupSeq);
 
-    console.log(seq, "seq");
-    console.log(userSeq, "userSeq");
     // 1. 요청자가 그룹 관리자인지 확인
     const isAdmin = await prisma.group.findFirst({
       where: { adminSeq: userSeq },
@@ -266,7 +264,7 @@ export async function PUT(request: NextRequest) {
     };
 
     // 2. memberShipRequest status 변경
-    const setMemberShipStatus = await prisma.membershipRequest.update({
+    await prisma.membershipRequest.update({
       where: { seq },
       data: { status: MEMBER_STATUS[status].status, updatedAt: new Date() },
     });
@@ -293,10 +291,9 @@ export async function PUT(request: NextRequest) {
     }
 
     await prisma.membership.upsert({
-      // 1. where: 고유한 레코드를 찾는 조건 (@@id와 일치)
       where: {
         userSeq_groupId: {
-          userSeq: userSeq,
+          userSeq: targetUserSeq,
           groupId: getGroupData.id,
         },
       },
@@ -305,7 +302,7 @@ export async function PUT(request: NextRequest) {
       },
       create: {
         groupId: getGroupData.id,
-        userSeq: userSeq,
+        userSeq: targetUserSeq,
         groupSeq: groupSeq,
         role: MEMBER_ROLE[role],
       },

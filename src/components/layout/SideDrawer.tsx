@@ -58,12 +58,14 @@ export default function SideDrawer({ userSeq }: { userSeq: number }) {
 
   const PutRequest = async ({
     index,
+    targetUserSeq,
     memberShipSeq,
     groupSeq,
     status,
     role,
   }: {
     index: number;
+    targetUserSeq: number;
     memberShipSeq: number;
     groupSeq: number;
     status: string;
@@ -71,7 +73,13 @@ export default function SideDrawer({ userSeq }: { userSeq: number }) {
   }) => {
     // setIsLoading(true);
     try {
-      const response = await PUT<SuccessResponse>(MEMBER_SHIP, { memberShipSeq, groupSeq, status, role });
+      const response = await PUT<SuccessResponse>(MEMBER_SHIP, {
+        targetUserSeq,
+        memberShipSeq,
+        groupSeq,
+        status,
+        role,
+      });
 
       const { success, data, error } = response;
 
@@ -159,6 +167,7 @@ export default function SideDrawer({ userSeq }: { userSeq: number }) {
                                   onPress={() =>
                                     PutRequest({
                                       index,
+                                      targetUserSeq: user.seq,
                                       memberShipSeq: seq,
                                       groupSeq,
                                       status: "APPROVED",
@@ -173,6 +182,7 @@ export default function SideDrawer({ userSeq }: { userSeq: number }) {
                                   onPress={() =>
                                     PutRequest({
                                       index,
+                                      targetUserSeq: user.seq,
                                       memberShipSeq: seq,
                                       groupSeq,
                                       status: "DENIED",

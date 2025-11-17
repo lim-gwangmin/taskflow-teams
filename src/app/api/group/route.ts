@@ -24,172 +24,47 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const GROUP_ROLE: { [key: string]: Role } = {
+      ADMIN: Role.ADMIN,
+      MEMBER: Role.MEMBER,
+      VIEWER: Role.VIEWER,
+      GUEST: Role.GUEST,
+    };
     /**
      * groupName parameter
      * "" = 전체 그룹 조회
-     * "admin" = 내가 만든 그룹 조회
-     * "viewer" = 내가 가입한 그룹 조회
+     * "ADMIN" = 내가 만든 그룹 조회
+     * "GUEST" = 내가 가입한 그룹 조회
      */
     const { seq: userSeq } = currentUser;
     const searchParams = request.nextUrl.searchParams;
     const groupName = searchParams.get("groupName");
     const currentPage = searchParams.get("currentPage");
+    const role = searchParams.get("role")?.toUpperCase() ?? "";
     const pageLimit = searchParams.get("pageLimit");
     // pagination
     const page = parseInt(currentPage || "1"); // 기본값 1
     const limit = parseInt(pageLimit || "10"); // 기본값 10
     const skip = (page - 1) * limit;
 
-    // 내가 만든 그룹 조회
-    if (groupName === "admin") {
-      const whereCondition = {
-        memberships: {
-          some: { userSeq, role: Role.ADMIN },
-        },
-      };
-      const [totalCount, groupsData] = await prisma.$transaction([
-        prisma.group.count({ where: whereCondition }),
-        prisma.group.findMany({
-          where: whereCondition,
-          select: {
-            seq: true,
-            no: true,
-            name: true,
-            createdAt: true,
-            description: true,
-            userLimit: true,
-            user: { select: { nickname: true, discriminator: true } },
-          },
-          orderBy: { createdAt: "desc" },
-          skip: skip, // 건너뛸 개수
-          take: limit, // 가져올 개수
-        }),
-      ]);
-      const totalPages = Math.ceil(totalCount / limit);
-      const hasNextPage = page < totalPages;
-      const hasPrevPage = page > 1 && page >= totalPages;
-      return NextResponse.json(
-        {
-          success: true,
-          data: {
-            message: "내가 만든 그룹 조회 성공",
-            groups: groupsData,
-            pagination: {
-              currentPage: page,
-              totalPages: totalPages,
-              totalCount: totalCount,
-              hasPrevPage: hasPrevPage,
-              hasNextPage: hasNextPage,
-            },
-          },
-          error: null,
-        },
-        { status: 200 }
-      );
-    }
-    // 내가 가입한 그룹 조회
-    if (groupName === "viewer") {
-      const whereCondition = {
-        memberships: {
-          some: { userSeq, role: Role.VIEWER },
-        },
-      };
-      const [totalCount, groupsData] = await prisma.$transaction([
-        prisma.group.count({ where: whereCondition }),
-        prisma.group.findMany({
-          where: whereCondition,
-          select: {
-            seq: true,
-            no: true,
-            name: true,
-            createdAt: true,
-            description: true,
-            userLimit: true,
-            user: { select: { nickname: true, discriminator: true } },
-          },
-          orderBy: { createdAt: "desc" },
-          skip: skip, // 건너뛸 개수
-          take: limit, // 가져올 개수
-        }),
-      ]);
-      const totalPages = Math.ceil(totalCount / limit);
-      const hasNextPage = page < totalPages;
-      const hasPrevPage = page > 1 && page >= totalPages;
-      return NextResponse.json(
-        {
-          success: true,
-          data: {
-            message: "내가 가입한 그룹 조회 성공",
-            groups: groupsData,
-            pagination: {
-              currentPage: page,
-              totalPages: totalPages,
-              totalCount: totalCount,
-              hasPrevPage: hasPrevPage,
-              hasNextPage: hasNextPage,
-            },
-          },
-          error: null,
-        },
-        { status: 200 }
-      );
-    }
+    const whereCondition = {
+      name: groupName ? { contains: groupName } : undefined,
+      memberships: role ? { some: { userSeq, role: GROUP_ROLE[role] } } : undefined,
+    };
 
-    // 특정 그룹 조회
-    if (groupName) {
-      const [totalCount, groupsData] = await prisma.$transaction([
-        prisma.group.count({ where: { name: groupName } }),
-        prisma.group.findMany({
-          where: { name: groupName },
-          select: {
-            seq: true,
-            no: true,
-            name: true,
-            description: true,
-            userLimit: true,
-            createdAt: true,
-            user: { select: { nickname: true, discriminator: true } },
-          },
-          orderBy: { createdAt: "desc" },
-          skip: skip, // 건너뛸 개수
-          take: limit, // 가져올 개수
-        }),
-      ]);
-      const totalPages = Math.ceil(totalCount / limit);
-      const hasNextPage = page < totalPages;
-      const hasPrevPage = page > 1 && page >= totalPages;
-
-      return NextResponse.json(
-        {
-          success: true,
-          data: {
-            message: "전체 그룹 조회 성공",
-            groups: groupsData,
-            pagination: {
-              currentPage: page,
-              totalPages: totalPages,
-              totalCount: totalCount,
-              hasPrevPage: hasPrevPage,
-              hasNextPage: hasNextPage,
-            },
-          },
-          error: null,
-        },
-        { status: 200 }
-      );
-    }
-
-    // 전체그룹 조회
     const [totalCount, groupsData] = await prisma.$transaction([
-      prisma.group.count(),
+      prisma.group.count({
+        where: whereCondition,
+      }),
       prisma.group.findMany({
+        where: whereCondition,
         select: {
           seq: true,
           no: true,
           name: true,
+          createdAt: true,
           description: true,
           userLimit: true,
-          createdAt: true,
           user: { select: { nickname: true, discriminator: true } },
         },
         orderBy: { createdAt: "desc" },
@@ -197,7 +72,6 @@ export async function GET(request: NextRequest) {
         take: limit, // 가져올 개수
       }),
     ]);
-    // --- 3. 페이지네이션 메타데이터 계산 ---
     const totalPages = Math.ceil(totalCount / limit);
     const hasNextPage = page < totalPages;
     const hasPrevPage = page > 1 && page >= totalPages;
@@ -205,10 +79,9 @@ export async function GET(request: NextRequest) {
       {
         success: true,
         data: {
-          message: "전체 그룹 조회 성공",
+          message: "그룹 조회 성공",
           groups: groupsData,
           pagination: {
-            // 페이지네이션 정보 추가
             currentPage: page,
             totalPages: totalPages,
             totalCount: totalCount,

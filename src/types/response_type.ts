@@ -5,6 +5,19 @@ export interface SuccessResponse {
   message: string;
 }
 
+export type CurrentUserSchema = {
+  seq: number;
+  email: string;
+  name: string;
+  nickname: string;
+  discriminator: string;
+};
+
+// 로그인 데이터 response 타입
+export interface LoginResponse extends SuccessResponse {
+  user: CurrentUserSchema;
+}
+
 /* =========== 그룹 관련 타입 정의 ============== */
 
 // 그룹 조회 데이터 타입

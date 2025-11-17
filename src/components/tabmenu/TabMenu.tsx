@@ -1,7 +1,15 @@
 import React, { useRef, useState, useEffect } from "react";
 import { GroupList, TabClickHandler } from "@/types/components";
 
-export default function TabMenu({ menus = [], onClick }: { menus: GroupList[]; onClick: TabClickHandler }) {
+export default function TabMenu({
+  menus = [],
+  key,
+  onClick,
+}: {
+  menus: GroupList[];
+  key: string;
+  onClick: TabClickHandler;
+}) {
   const tabRefs = useRef<HTMLElement[]>([]);
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   const [indicatorStyle, setIndicatorStyle] = useState({});

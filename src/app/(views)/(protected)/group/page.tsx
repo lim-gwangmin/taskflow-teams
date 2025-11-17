@@ -7,7 +7,6 @@ import { POST, GET } from "@/lib/axiosInstans";
 import { ROUTES } from "@/constants/routes";
 import { GROUP_API_URLS } from "@/constants/api/group";
 import { SuccessResponse, GroupListResponse, GroupList } from "@/types/response_type";
-import TabMenu from "@/components/tabmenu/TabMenu";
 import { GroupSearchParams } from "@/types/components";
 import useCustomRouter from "@/hooks/useCustomRouter";
 import { Pagination, Spinner } from "@heroui/react";
@@ -23,6 +22,10 @@ export default function GropPage() {
   const { handleRoute } = useCustomRouter();
   const { isLoading, setIsLoading } = useLoader(false);
   const [groups, setGroups] = useState<GroupList[]>([]);
+  const [groupSearch, setGroupSearch] = useState({
+    groupName: "",
+    role: "",
+  });
   const [pagination, setpPagination] = useState<GroupListResponse["pagination"]>({
     currentPage: 1,
     totalPages: 1,
@@ -64,16 +67,19 @@ export default function GropPage() {
       setIsLoading(false);
     }
   };
+
   // 그룹 조회
   const handleSearchGroup = async ({
     groupName = "",
+    role = "",
     currentPage = 1,
     pageLimit = 5,
   }: GroupSearchParams): Promise<void> => {
     setIsLoading(true);
     try {
+      setGroupSearch({ groupName, role });
       const response = await GET<GroupListResponse>(
-        GROUP_API_URLS.GROUP + `?groupName=${groupName}&currentPage=${currentPage}&pageLimit=${pageLimit}`
+        GROUP_API_URLS.GROUP + `?groupName=${groupName}&role=${role}&currentPage=${currentPage}&pageLimit=${pageLimit}`
       );
       const { success, data, error } = response;
 
@@ -117,7 +123,10 @@ export default function GropPage() {
       </form>
       <h2 style={{ fontSize: "20px", fontWeight: "bold", borderTop: "2px solid #333" }}>그룹 조회 영역</h2>
       {/* 탭메뉴 */}
-      <TabMenu menus={menuItems} onClick={handleSearchGroup} />
+      <button onClick={() => handleSearchGroup({})}>전체</button>
+      <button onClick={() => handleSearchGroup({ ...groupSearch, role: "ADMIN" })}>관리</button>
+      <button onClick={() => handleSearchGroup({ ...groupSearch, role: "GUEST" })}>가입</button>
+      {/* <TabMenu menus={menuItems} onClick={handleSearchGroup} /> */}
       {isLoading ? (
         <Spinner size="lg" />
       ) : (
@@ -143,7 +152,7 @@ export default function GropPage() {
           page={pagination.currentPage}
           total={pagination.totalPages}
           onChange={(currentPage) => {
-            handleSearchGroup({ currentPage });
+            handleSearchGroup({ ...groupSearch, currentPage });
           }}
         />
       ) : (

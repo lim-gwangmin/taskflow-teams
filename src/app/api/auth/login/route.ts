@@ -53,11 +53,21 @@ export async function POST(request: NextRequest) {
       expiresIn: "7d",
     });
 
+    const { seq, name, email: userEmail, nickname, discriminator } = user;
     // 4. 성공 응답과 함께 쿠키에 토큰 저장
     const response = NextResponse.json(
       {
         success: true,
-        data: { message: SUCCESS_200 },
+        data: {
+          message: SUCCESS_200,
+          user: {
+            seq,
+            name,
+            email: userEmail,
+            nickname,
+            discriminator,
+          },
+        },
         error: null,
       },
       { status: 200 }

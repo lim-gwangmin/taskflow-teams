@@ -29,6 +29,7 @@ export type ContainerProps_type = {
 // 그룹 조회 함수 파라미터 타입
 export type GroupSearchParams = {
   groupName?: string;
+  role?: string;
   currentPage?: number;
   pageLimit?: number;
 };

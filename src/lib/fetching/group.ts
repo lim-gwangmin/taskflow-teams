@@ -22,26 +22,45 @@ export async function fetchDetailGroup({ groupSeq }: GroupSeqParamsType) {
       };
     }
     const { seq: userSeq } = currentUser;
-    // --- 한 번의 쿼리로 존재 여부와 권한을 동시에 확인 ---
-    const membership = await prisma.membership.findFirst({
-      where: { userSeq, groupSeq, group: { seq: groupSeq } },
-      select: {
-        groupSeq: true,
-        role: true,
-        joinedAt: true,
-        group: {
-          select: {
-            name: true,
-            no: true,
-            createdAt: true,
-            description: true,
-            userLimit: true,
+
+    const [membership, memberList] = await prisma.$transaction([
+      prisma.membership.findFirst({
+        where: { userSeq, groupSeq, group: { seq: groupSeq } },
+        select: {
+          groupSeq: true,
+          role: true,
+          joinedAt: true,
+          group: {
+            select: {
+              name: true,
+              no: true,
+              createdAt: true,
+              description: true,
+              userLimit: true,
+            },
+          },
+          user: { select: { nickname: true, discriminator: true } },
+        },
+      }),
+      prisma.membership.findMany({
+        where: {
+          groupSeq,
+          userSeq: { not: userSeq },
+        },
+        select: {
+          role: true,
+          joinedAt: true,
+          user: {
+            select: {
+              seq: true,
+              email: true,
+              nickname: true,
+              discriminator: true,
+            },
           },
         },
-        user: { select: { nickname: true, discriminator: true } },
-      },
-    });
-
+      }),
+    ]);
     if (!membership) {
       // 결과가 없으면, 그룹 자체가 없는지 or 권한만 없는지 구분 필요 시 추가 쿼리
       const groupExists = await prisma.group.count({ where: { seq: groupSeq } });
@@ -59,7 +78,10 @@ export async function fetchDetailGroup({ groupSeq }: GroupSeqParamsType) {
       success: true,
       data: {
         message: SUCCESS_200,
-        groupDatas: membership,
+        result: {
+          membership,
+          memberList,
+        },
       },
       error: null,
     };

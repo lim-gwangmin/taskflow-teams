@@ -46,9 +46,19 @@ export type GroupParamsType = {
     groupSeq: string;
   };
 };
+export type MemberListType = {
+  role: string;
+  joinedAt: Date;
+  user: {
+    seq: number;
+    email: string;
+    nickname: string;
+    discriminator: string;
+  };
+}[];
 // 그룹 상세페이지 그룹데이터 타입
 export type GroupDetailDataType = {
-  groupDatas: {
+  membership: {
     group: {
       name: string;
       no: number;
@@ -61,4 +71,5 @@ export type GroupDetailDataType = {
     joinedAt: Date;
     role: Role;
   };
+  memberList: MemberListType;
 };

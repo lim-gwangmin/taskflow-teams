@@ -123,26 +123,33 @@ export default function GropPage() {
       </form>
       <h2 style={{ fontSize: "20px", fontWeight: "bold", borderTop: "2px solid #333" }}>그룹 조회 영역</h2>
       {/* 탭메뉴 */}
-      <button onClick={() => handleSearchGroup({})}>전체</button>
-      <button onClick={() => handleSearchGroup({ ...groupSearch, role: "ADMIN" })}>관리</button>
-      <button onClick={() => handleSearchGroup({ ...groupSearch, role: "GUEST" })}>가입</button>
+      <div className="flex gap-10">
+        <button onClick={() => handleSearchGroup({})}>전체</button>
+        <button onClick={() => handleSearchGroup({ ...groupSearch, role: "ADMIN" })}>관리</button>
+        <button onClick={() => handleSearchGroup({ ...groupSearch, role: "GUEST" })}>가입</button>
+      </div>
+
       {/* <TabMenu menus={menuItems} onClick={handleSearchGroup} /> */}
       {isLoading ? (
         <Spinner size="lg" />
       ) : (
         <ul>
           {/* 그룹 리스트 */}
-          {groups.map((group, index) => (
-            <li key={index}>
-              <button onClick={() => handleMoveToGroupDetailPage({ seq: group.seq })} type="button">
-                <p>순서: {index + 1}</p>
-                <p>그룹명: {group.name}</p>
-                <p>
-                  그룹장: {group.user.nickname}#{group.user.discriminator}
-                </p>
-              </button>
-            </li>
-          ))}
+          {groups.length ? (
+            groups.map((group, index) => (
+              <li key={index}>
+                <button onClick={() => handleMoveToGroupDetailPage({ seq: group.seq })} type="button">
+                  <p>순서: {index + 1}</p>
+                  <p>그룹명: {group.name}</p>
+                  <p>
+                    그룹장: {group.user.nickname}#{group.user.discriminator}
+                  </p>
+                </button>
+              </li>
+            ))
+          ) : (
+            <p>데이터 없음</p>
+          )}
         </ul>
       )}
       {pagination && groups.length ? (

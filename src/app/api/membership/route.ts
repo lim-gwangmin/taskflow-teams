@@ -8,9 +8,27 @@ const { CURRENT_USER } = COMMON_COMMENTS.AUTH;
 const { SERVER_ERROR } = COMMON_COMMENTS.SERVER;
 
 const REQUEST_STATUS_MAP: Record<string, RequestStatus> = {
-  PENDING: RequestStatus.PENDING,
-  APPROVED: RequestStatus.APPROVED,
-  DENIED: RequestStatus.DENIED,
+  PENDING: {
+    status: RequestStatus.PENDING,
+    comment: {
+      APPLICATION: "이미 요청한 그룹입니다.",
+      INVITATION: "이미 초대한 유저입니다.",
+    },
+  },
+  APPROVED: {
+    status: RequestStatus.APPROVED,
+    comment: {
+      APPLICATION: "승인된 그룹입니다.",
+      INVITATION: "승인된 유저입니다.",
+    },
+  },
+  DENIED: {
+    status: RequestStatus.DENIED,
+    comment: {
+      APPLICATION: "거절된 그룹입니다.",
+      INVITATION: "거절된 유저입니다.",
+    },
+  },
 };
 const REQUEST_TYPE_MAP: Record<string, RequestType> = {
   APPLICATION: RequestType.APPLICATION,
@@ -158,6 +176,8 @@ export async function POST(request: NextRequest) {
       const isDuplicate = await prisma.membershipRequest.findFirst({
         where: { groupSeq, userSeq },
       });
+
+      console.log(isDuplicate, "isDuplicate");
 
       if (isDuplicate) {
         return NextResponse.json(
@@ -320,6 +340,91 @@ export async function PUT(request: NextRequest) {
     // 3. memberShip 데이터 추가
   } catch (error) {
     console.error(SERVER_ERROR, error);
+    return NextResponse.json(
+      {
+        success: false,
+        data: null,
+        error: { message: "서버 오류 발생" },
+      },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const currentUser = await getCurrentUser();
+
+    // 유저 인증
+    if (!currentUser) {
+      return NextResponse.json(
+        {
+          success: false,
+          data: null,
+          error: { message: CURRENT_USER },
+        },
+        { status: 401 }
+      );
+    }
+
+    const { seq: adminSeq } = currentUser;
+    const searchParams = request.nextUrl.searchParams;
+    const groupSeq = Number(searchParams.get("groupSeq"));
+    const userSeq = Number(searchParams.get("userSeq"));
+
+    // 삭제하려는 유저가 해당 그룹에 삭제 권한이 있는지 체크
+    const isAdmin = await prisma.membership.findFirst({
+      where: { groupSeq, userSeq: adminSeq, role: Role.ADMIN },
+    });
+
+    // 권한 없음.
+    if (!isAdmin) {
+      return NextResponse.json(
+        {
+          success: false,
+          data: null,
+          error: { message: "권한이 없습니다." },
+        },
+        { status: 402 }
+      );
+    }
+
+    const getGroupData = await prisma.group.findFirst({
+      where: { seq: groupSeq },
+    });
+
+    if (!getGroupData) {
+      return NextResponse.json(
+        {
+          success: false,
+          data: null,
+          error: { message: "그룹이 존재하지 않습니다." },
+        },
+        { status: 402 }
+      );
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.membership.delete({
+        where: {
+          userSeq_groupId: {
+            userSeq,
+            groupId: getGroupData.id,
+          },
+        },
+      });
+      await tx.membershipRequest.deleteMany({
+        where: { userSeq, groupSeq },
+      });
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: { message: "그룹에서 삭제되었습니다." },
+      error: null,
+    });
+  } catch (error) {
+    console.error(error);
     return NextResponse.json(
       {
         success: false,

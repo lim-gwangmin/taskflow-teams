@@ -1,47 +1,9 @@
 "use client";
-
-import { FormEvent } from "react";
-import useLoader from "@/hooks/useLoader";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { POST } from "@/lib/axiosInstans";
-import { AUTH_API_URLS } from "@/constants/api/auth";
-import { LoginResponse, SuccessResponse } from "@/types/response_type";
-import { ROUTES } from "@/constants/routes";
-import { useUserStore } from "@/store/userStore";
-const { LOG_IN } = AUTH_API_URLS;
+import useLoginForm from "@/hooks/useLoginForm";
+import { LoadingSpinner } from "@/components/ui/icon";
 
 export default function LoginPage() {
-  const router = useRouter();
-  const { login } = useUserStore();
-  const { setIsLoading } = useLoader(false);
-
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    setIsLoading(true);
-
-    const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
-    const rememberMe = formData.has("rememberMe") as boolean;
-
-    try {
-      const response = await POST<LoginResponse>(LOG_IN, { email, password, rememberMe });
-      const { success, data, error } = response;
-
-      if (!success) {
-        toast.error(error.message);
-        throw new Error(error.message);
-      }
-      login(data.user);
-      router.push(ROUTES.DASHBOARD);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { isLoading, register, handleSubmit, errors } = useLoginForm();
 
   return (
     // 1. 전체 화면을 차지하고, 배경색을 연한 회색으로 설정
@@ -63,12 +25,13 @@ export default function LoginPage() {
               </label>
               <input
                 id="email"
-                name="email"
                 type="email"
                 placeholder="email@example.com"
                 className="w-full px-4 py-2 border placeholder:text-gray-400 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
+                {...register("email")}
+                disabled={isLoading}
               />
+              {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
             </div>
 
             {/* 비밀번호 입력란 */}
@@ -78,12 +41,13 @@ export default function LoginPage() {
               </label>
               <input
                 id="password"
-                name="password"
                 type="password"
                 placeholder="비밀번호를 입력하세요"
                 className="w-full px-4 py-2 border placeholder:text-gray-400 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
+                {...register("password")}
+                disabled={isLoading}
               />
+              {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
             </div>
 
             {/* 자동 로그인 체크란 */}
@@ -94,10 +58,10 @@ export default function LoginPage() {
                   name="rememberMe"
                   type="checkbox"
                   className="
-                        peer appearance-none w-full h-full border border-gray-300 rounded-md
-                        checked:bg-blue-600 checked:border-transparent
-                        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
-                        cursor-pointer
+                      peer appearance-none w-full h-full border border-gray-300 rounded-md
+                      checked:bg-blue-600 checked:border-transparent
+                      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+                      cursor-pointer
                     "
                 />
                 {/* SVG 체크 아이콘 */}
@@ -124,9 +88,18 @@ export default function LoginPage() {
             {/* 로그인 버튼 */}
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white font-bold py-3 rounded-md hover:bg-blue-700 transition-colors"
+              className="relative h-[48px] w-full bg-blue-600 text-white font-bold py-3 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+              disabled={isLoading}
             >
-              로그인
+              {isLoading ? (
+                <LoadingSpinner
+                  width={30}
+                  height={30}
+                  style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)" }}
+                />
+              ) : (
+                "로그인"
+              )}
             </button>
           </form>
 

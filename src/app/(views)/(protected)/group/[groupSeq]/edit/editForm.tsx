@@ -8,12 +8,20 @@ import { SuccessResponse } from "@/types/response_type";
 import { toast } from "sonner";
 import useCustomRouter from "@/hooks/useCustomRouter";
 
-export default function EditForm({ groupSeq, groupDatas }: { groupSeq: number; groupDatas: any }) {
+export default function EditForm({
+  groupSeq,
+  membership,
+  memberList,
+}: {
+  groupSeq: number;
+  membership: any;
+  memberList: object;
+}) {
   const formRef = useRef<HTMLFormElement>(null);
   const { handleRoute } = useCustomRouter();
   const { setIsLoading } = useLoader(false);
-  const { group, role, user } = groupDatas;
-  const joinedAt = formattedDate(groupDatas.joinedAt);
+  const { group, role, user } = membership;
+  const joinedAt = formattedDate(membership.joinedAt);
   const createdAt = formattedDate(group.createdAt);
 
   const handleGroupEditSubmit = async (e: FormEvent) => {

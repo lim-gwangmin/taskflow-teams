@@ -19,9 +19,9 @@ export default async function EditGroup({ params }: GroupParamsType) {
       throw new Error(error.message);
     }
 
-    const { groupDatas } = data;
+    const { membership, memberList } = data.result;
 
-    return <EditForm groupSeq={typeofNumberGroupSeq} groupDatas={groupDatas} />;
+    return <EditForm groupSeq={typeofNumberGroupSeq} membership={membership} memberList={memberList} />;
   } catch (error) {
     if (error) {
       console.error(error);

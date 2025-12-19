@@ -2,18 +2,19 @@ import { ComponentProps } from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
+import { LoadingSpinner } from "./icon";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+  "inline-flex items-center relative justify-center gap-2 rounded-md text-sm font-medium transition-all rounded-md transition-colors disabled:opacity-75 disabled:cursor-not-allowed disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        default: "bg-primary text-primary-foreground hover:bg-primary/70",
         destructive:
-          "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+          "bg-destructive text-white hover:bg-destructive/70 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:
           "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/70",
         ghost: "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
       },
@@ -37,12 +38,28 @@ function Button({
   className,
   variant,
   size,
+  isLoading = false,
+  loadingSpinnerColor = "#fff",
   asChild = false,
   ...props
-}: ComponentProps<"button"> & VariantProps<typeof buttonVariants> & { asChild?: boolean }) {
+}: ComponentProps<"button"> &
+  VariantProps<typeof buttonVariants> & { asChild?: boolean; isLoading?: boolean; loadingSpinnerColor?: string }) {
   const Comp = asChild ? Slot : "button";
 
-  return <Comp data-slot="button" className={cn(buttonVariants({ variant, size, className }))} {...props} />;
+  return (
+    <Comp data-slot="button" className={cn(buttonVariants({ variant, size, className }))} {...props}>
+      {isLoading ? (
+        <LoadingSpinner
+          width={30}
+          height={30}
+          color={loadingSpinnerColor}
+          style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%) scale(1.5)" }}
+        />
+      ) : (
+        props.children
+      )}
+    </Comp>
+  );
 }
 
 export { Button, buttonVariants };

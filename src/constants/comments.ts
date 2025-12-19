@@ -23,10 +23,14 @@ export const AUTH_COMMENTS = {
     ERROR_400: "이메일과 비밀번호는 필수입니다.",
     ERROR_409: "이미 사용 중인 이메일입니다.",
     ERROR_500: "회원가입 처리 중 오류가 발생했습니다.",
+    VALIDATE_HAS_NAME: "이름을 입력하세요.",
     VALIDATE_LENGTH: "비밀번호는 6자리 이상이어야 합니다.",
     VALIDATE_HAS_NUMBER: "비밀번호에 숫자가 포함되어야 합니다.",
+    VALIDATE_HAS_UPPERCASE: "대문자가 포함되어야 합니다.",
+    VALIDATE_HAS_LOWERCASE: "소문자가 포함되어야 합니다.",
     VALIDATE_HAS_SPECIALCHAR: "비밀번호에 특수문자가 포함되어야 합니다.",
     VALIDATE_CONFIRM_PASSWORD: "비밀번호가 일치하지 않습니다.",
+    VALIDATE_EMAIL: "유효한 이메일 주소를 입력해주세요.",
     VALIDATE_VERIFICATION: "이메일 인증이 되지 않았습니다.",
   },
   // 로그아웃
@@ -47,7 +51,8 @@ export const AUTH_COMMENTS = {
     ERROR_400_INVALID_CODE: "인증번호가 올바르지 않습니다.",
     ERROR_400_CODE_EXPIRED: "인증번호가 만료되었습니다.",
     ERROR_500: "이메일 인증처리 중 오류가 발생했습니다.",
-    VALIDATE_EMAIL_CODE: "인증코드를 입력해주세요.",
+    VALIDATE_EMAIL_CODE: "인증번호를 입력해주세요.",
+    VALIDATE_EMAIL_CODE_ALERT: "인증번호 6자리를 입력해주세요.",
   },
 } as const;
 

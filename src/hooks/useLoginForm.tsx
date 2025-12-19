@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,7 +12,7 @@ import { toast } from "sonner";
 
 const { LOG_IN } = AUTH_API_URLS;
 
-const loginDatas = z.object({
+const loginSchema = z.object({
   email: z.email("유효한 이메일 주소를 입력해주세요."),
   password: z
     .string()
@@ -24,19 +24,15 @@ const loginDatas = z.object({
   rememberMe: z.boolean().default(false),
 });
 
-type loginSchema = {
-  email: string;
-  password: string;
-  rememberMe: boolean;
-};
+export type LoginInputs = z.infer<typeof loginSchema>;
 
-export default function useLoginForm() {
+export function useLoginForm() {
   const router = useRouter();
   const { login } = useUserStore();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm({
-    resolver: zodResolver(loginDatas), // 폼 제출(Submit) 시 유효성 검사를 수행할 함수
+    resolver: zodResolver(loginSchema), // 폼 제출(Submit) 시 유효성 검사를 수행할 함수
     mode: "onSubmit", // 최초 유효성 검사는 제출(Submit) 시에만 실행
     reValidateMode: "onSubmit", // 에러 발생 후 수정할 때도 제출 시에만 재검사 (onChange 검사 방지)
     shouldFocusError: true, // 에러 발생 시 해당 입력창으로 자동 포커스 이동
@@ -47,7 +43,7 @@ export default function useLoginForm() {
     },
   });
 
-  const onSubmit = async (loginData: loginSchema) => {
+  const onSubmit = async (loginData: LoginInputs) => {
     setIsLoading(true);
     try {
       const response = await POST<LoginResponse>(LOG_IN, loginData);

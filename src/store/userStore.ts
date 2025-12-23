@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { CurrentUserSchema } from "@/services/auth";
+import { CurrentUserSchema } from "@/types/auth";
 
 interface UserState {
   currentUser: CurrentUserSchema | null;

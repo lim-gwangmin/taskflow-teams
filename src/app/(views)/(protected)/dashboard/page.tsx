@@ -1,5 +1,5 @@
 import { getCurrentUser } from "@/services/auth";
-import Header from "@/components/layout/Header";
+import Header from "@/components/layout/header";
 import { redirect } from "next/navigation";
 import { ROUTES } from "@/constants/routes";
 import Container from "@/components/layout/Container";
@@ -12,7 +12,7 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <Header currentUser={currentUser} />
+      {/* <Header currentUser={currentUser} />
       <Container>
         <div>
           <h1>
@@ -20,7 +20,7 @@ export default async function DashboardPage() {
             {currentUser.nickname}#{currentUser.discriminator} 님!
           </h1>
         </div>
-      </Container>
+      </Container> */}
     </>
   );
 }

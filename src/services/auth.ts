@@ -1,10 +1,11 @@
 import { cookies } from "next/headers";
-import { verify } from "jsonwebtoken";
+import { cache } from "react";
+import { jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
 import { CurrentUserSchema } from "@/types/auth";
 
 // 유저 정보 조회
-export const getCurrentUser = async (): Promise<CurrentUserSchema> => {
+export const getCurrentUser = cache(async (): Promise<CurrentUserSchema> => {
   const cookieStore = await cookies();
   const tokenCookie = cookieStore.get("token");
 
@@ -12,12 +13,12 @@ export const getCurrentUser = async (): Promise<CurrentUserSchema> => {
     return null;
   }
 
-  const secret = process.env.JWT_SECRET!;
-  const decoded = verify(tokenCookie.value, secret);
-
   try {
-    if (typeof decoded === "object" && "userSeq" in decoded) {
-      const userSeq = decoded.userSeq as number;
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+    const { payload } = await jwtVerify(tokenCookie.value, secret);
+
+    if (typeof payload === "object" && "userSeq" in payload) {
+      const userSeq = payload.userSeq as number;
       const currentUser = await prisma.user.findUnique({
         where: { seq: userSeq },
         select: {
@@ -30,11 +31,12 @@ export const getCurrentUser = async (): Promise<CurrentUserSchema> => {
       });
       return currentUser;
     }
-    cookieStore.delete("token");
+
+    // cookieStore.delete("token");
     return null;
   } catch (error) {
     console.error("Invalid token:", error);
     cookieStore.delete("token");
     return null;
   }
-};
+});

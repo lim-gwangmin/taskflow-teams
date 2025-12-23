@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma"; // Prisma 클라이언트 인스턴스
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import { SignJWT } from "jose";
 import { COMMON_COMMENTS, AUTH_COMMENTS } from "@/constants/comments";
 
 interface CookieOptions {
@@ -49,9 +49,11 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. JWT 토큰 생성
-    const token = jwt.sign({ userSeq: user.seq }, process.env.JWT_SECRET!, {
-      expiresIn: "7d",
-    });
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+    const token = await new SignJWT({ userSeq: user.seq })
+      .setProtectedHeader({ alg: "HS256" })
+      .setExpirationTime("7d")
+      .sign(secret);
 
     const { seq, name, email: userEmail, nickname, discriminator } = user;
     // 4. 성공 응답과 함께 쿠키에 토큰 저장

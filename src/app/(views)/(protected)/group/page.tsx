@@ -10,6 +10,7 @@ import { SuccessResponse, GroupListResponse, GroupList } from "@/types/response_
 import { GroupSearchParams } from "@/types/components";
 import useCustomRouter from "@/hooks/useCustomRouter";
 import { Pagination, Spinner } from "@heroui/react";
+import useDeviceSize from "@/hooks/useDeviceSize";
 
 const menuItems = [
   { title: "전체", params: "" },

@@ -1,27 +1,19 @@
-import { ReactNode } from "react";
-import { getCurrentUser } from "@/services/auth";
-import Header from "@/components/layout/Header";
-import { ROUTES } from "@/constants/routes";
-import { redirect } from "next/navigation";
-import Container from "@/components/layout/Container";
-import StoreUserInital from "@/components/storeInitializer/StoreInitializer";
+"use client";
 
-type DefatultProtectProps = {
-  children: ReactNode;
-};
+import { useState, ReactNode } from "react";
+import Sidebar from "@/components/layout/sidebar";
+import Header from "@/components/layout/header";
 
-export default async function ProtectedLayout({ children }: DefatultProtectProps) {
-  const currentUser = await getCurrentUser();
-
-  if (!currentUser) {
-    redirect(ROUTES.LOGIN);
-  }
-
+export default function MainLayout({ children }: { children: ReactNode }) {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   return (
-    <main>
-      <Header currentUser={currentUser} />
-      <StoreUserInital currentUser={currentUser} />
-      <Container>{children}</Container>
-    </main>
+    <div className="flex h-screen bg-background">
+      <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
+
+      <main className="flex-1 overflow-auto">
+        <Header onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
+        <div>{children}</div>
+      </main>
+    </div>
   );
 }

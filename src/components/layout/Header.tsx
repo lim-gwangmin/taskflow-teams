@@ -1,71 +1,96 @@
 "use client";
+
 import Link from "next/link";
-import { DropdownSection, DropdownItem, User } from "@heroui/react";
-import DropDown from "../dropdown/DropDown";
-import { DROPDOWN_COLOR } from "../dropdown/constants";
 import { DROPDOWN_ROUTES } from "@/constants/routes";
-import { get_logout } from "@/lib/api/auth";
 import { ROUTES } from "@/constants/routes";
-import Container from "./Container";
-import SideDrawer from "./SideDrawer";
+import { Button } from "../ui/button";
+import { Menu, User, LogOut } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuSeparator,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { toast } from "sonner";
+import { AUTH_API_URLS } from "@/constants/api/auth";
+import useCustomRouter from "@/hooks/useCustomRouter";
+import { GET } from "@/lib/axiosInstans";
+import { useUserStore } from "@/store/userStore";
+import { SuccessResponse } from "@/types/response_type";
+import NotificationPopover from "../ui/notification-popover";
 
 type UserSchemaProp = {
-  currentUser: {
-    seq: number;
-    name: string;
-    email: string;
-    nickname: string;
-    discriminator: string;
-  };
+  onMenuClick: () => void;
+  // currentUser: {
+  //   seq: number;
+  //   name: string;
+  //   email: string;
+  //   nickname: string;
+  //   discriminator: string;
+  // };
 };
 
-export default function Header({ currentUser }: UserSchemaProp) {
-  const { seq: userSeq, name, email, nickname, discriminator } = currentUser;
+export default function Header({ onMenuClick }: UserSchemaProp) {
+  const { currentUser, logout } = useUserStore();
+  const { handleRoute } = useCustomRouter();
+
+  const handleLogout = async (): Promise<void> => {
+    // 로그아웃 API 호출
+    try {
+      const response = await GET<SuccessResponse>(AUTH_API_URLS.LOG_OUT);
+      const { data, error } = response;
+
+      if (error) {
+        toast.error(error.message);
+        throw new Error(error.message);
+      }
+
+      toast.success(data.message);
+      logout();
+      handleRoute(ROUTES.LOGIN);
+    } catch (error) {
+      console.error("logout error: ", error);
+    }
+  };
 
   return (
-    <header className="w-full border-b-1 border-solid border-[#c8c8c8] mb-[30px]">
-      <Container className="flex justify-between items-center py-[10px] sm:py-[14px] md:py-[16px] lg:py-[20px]">
-        <div>
-          <h1 className="font-bold">
-            <Link href={ROUTES.DASHBOARD}>TaskFlow Teams</Link>
-          </h1>
+    <header className="sticky top-0 z-50 bg-card border-b border-border">
+      <div className="flex items-center justify-between px-6 py-4">
+        <Button variant="ghost" size="icon" onClick={onMenuClick} className="lg:hidden">
+          <Menu />
+        </Button>
+        <div className="flex items-center gap-4 ml-auto">
+          <NotificationPopover />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <Avatar>
+                  <AvatarImage src="https://avatar.vercel.sh/user" />
+                  <AvatarFallback>사용자</AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <Link href="/profile">
+                <DropdownMenuItem>
+                  <User className="mr-2 h-4 w-4" />
+                  프로필
+                </DropdownMenuItem>
+              </Link>
+              <DropdownMenuSeparator />
+              <Link href="/settings">
+                <DropdownMenuItem>설정</DropdownMenuItem>
+              </Link>
+              <DropdownMenuItem onSelect={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                로그아웃
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-        <div className="flex items-center gap-[10px]">
-          <div>
-            <DropDown title={`${nickname}#${discriminator}`} color={DROPDOWN_COLOR.primary} disabledKeys={["profile"]}>
-              <DropdownSection aria-label="user">
-                <DropdownItem key={"profile"} className="h-14 gap-2 opacity-100" isReadOnly>
-                  <User
-                    avatarProps={{
-                      size: "sm",
-                      // src: "https://www.google.com/url?sa=i&url=https%3A%2F%2Fkr.freepik.com%2Ffree-photos-vectors%2Fuser&psig=AOvVaw12wbwZEqxZINWfb1iXR8XM&ust=1756788785427000&source=images&cd=vfe&opi=89978449&ved=0CBUQjRxqFwoTCPCMg6_ito8DFQAAAAAdAAAAABAE",
-                    }}
-                    classNames={{
-                      name: "text-default-600",
-                      description: "text-default-500",
-                    }}
-                    description={email}
-                    name={name}
-                  />
-                </DropdownItem>
-              </DropdownSection>
-              <DropdownSection aria-label="route">
-                {DROPDOWN_ROUTES.map((page) => (
-                  <DropdownItem key={page.menu} href={page.url}>
-                    {page.menu}
-                  </DropdownItem>
-                ))}
-              </DropdownSection>
-              <DropdownSection aria-label="logout">
-                <DropdownItem key={"logoutBtn"} onClick={get_logout}>
-                  로그아웃
-                </DropdownItem>
-              </DropdownSection>
-            </DropDown>
-          </div>
-          <SideDrawer userSeq={userSeq} />
-        </div>
-      </Container>
+      </div>
     </header>
   );
 }
